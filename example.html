@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>plot testy</title>
+</head>
+<body>
+    <div id="drawing1"></div>
+    <div id="drawing2"></div>
+    <div id="drawing3"></div>
+
+  <script src="plotSvg.js"></script>
+  <script>
+
+  const optParam = {title:"test\ntest2", 
+                    subtitle:"test1",
+                    xlabel: "xlabel",
+                    ylabel: "ylabel",
+                    xScale: "log",
+                    yScale: "linear",
+                    xlim: [1,100],
+                    legend: linspace(1,1, 30), //["test1", "test2"]
+                    legendLocation: "northeastoutside"
+                    //legendLocation: "northeast"
+                    };
+
+  numLines =10;
+   x = linspace(1,10, 400);
+   y = Array.from(Array(x.length*numLines), () => Math.random());
+   y1 = Array.from(Array(x.length*numLines), () => Math.random());
+   y2 = Array.from(Array(x.length*numLines), () => Math.random());
+   //x = [0,100, 200];
+   //y = [0,100, 300, 100,200, 300];
+   plotSvg("drawing1", x, y, numLines, optParam);
+   //plotSvg("drawing2", x, y1, numLines, optParam);
+   //plotSvg("drawing3", x, y2, numLines, optParam);
+  </script>
+</body>
+</html>

@@ -287,7 +287,8 @@ function plotClicked(event, elementId, renderWidth, renderHeight, xmin, xmax, ym
     const tooltip = createSVGElement("g", {"class":"tooltip", 
         "transform":"translate(" + topX + " " + topY + ")"
     });
-    tooltip.onclick = (event) => {event.srcElement.parentNode.remove()};
+    
+    tooltip.onclick = (event) => {if(event.srcElement.parentNode.tagName == "g") event.srcElement.parentNode.remove()};
    
     const rect = createSVGElement("rect", {"x":5, "y": -21, "stroke":"rgb(223,223,223)", "fill":lineColor, "rx":4, 
         "vector-effect":"non-scaling-stroke"});

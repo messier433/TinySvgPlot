@@ -88,30 +88,33 @@ function appendSvgLine(parent, x1, y1, x2,y2, stroke="black", strokedasharray=""
 
 function toggleLineVisibility(elementId, lineIdx, nLegend, numLines) {
     var style = document.getElementById("pl_"+elementId+"_"+lineIdx).style.display;
+    
     if(numLines == 0) {
+        const tooltips = document.getElementById("gpl_" +elementId+"_"+lineIdx); // tooltip group
         if (style === "none") {
             document.getElementById("pl_"+elementId+"_"+lineIdx).style.display = "block";
             document.getElementById("lli_"+elementId+"_"+lineIdx).style.opacity = 1;
             document.getElementById("lti_"+elementId+"_"+lineIdx).style.opacity = 1;
+            if(tooltips!=null) tooltips.style.display = "block";
         } else {        
             document.getElementById("pl_"+elementId+"_"+lineIdx).style.display = "none";
             document.getElementById("lli_"+elementId+"_"+lineIdx).style.opacity = 0.3;
             document.getElementById("lti_"+elementId+"_"+lineIdx).style.opacity = 0.3;
+            if(tooltips!=null) tooltips.style.display = "none";
         };
     } else {
         for(idx = 0; idx < numLines; ++idx) {
+            const tooltips = document.getElementById("gpl_" +elementId+"_"+idx); // tooltip group        
             if (style === "none") { // make all visible again
                 document.getElementById("pl_"+elementId+"_"+idx).style.display = "block";
-                if(idx < nLegend) {
-                    document.getElementById("lli_"+elementId+"_"+idx).style.opacity = 1;
-                    document.getElementById("lti_"+elementId+"_"+idx).style.opacity = 1;
-                }
+                document.getElementById("lli_"+elementId+"_"+idx).style.opacity = 1;
+                document.getElementById("lti_"+elementId+"_"+idx).style.opacity = 1;
+                if(tooltips!=null) tooltips.style.display = "block";
             } else  if(idx != lineIdx) { // only keep selected one visible
                 document.getElementById("pl_"+elementId+"_"+idx).style.display = "none";
-                if(idx < nLegend) {
-                    document.getElementById("lli_"+elementId+"_"+idx).style.opacity = 0.3;
-                    document.getElementById("lti_"+elementId+"_"+idx).style.opacity = 0.3;
-                };
+                document.getElementById("lli_"+elementId+"_"+idx).style.opacity = 0.3;
+                document.getElementById("lti_"+elementId+"_"+idx).style.opacity = 0.3;
+                if(tooltips!=null) tooltips.style.display = "none";
             };
         };
     };
@@ -284,6 +287,11 @@ function plotClicked(event, elementId, renderWidth, renderHeight, xmin, xmax, ym
     const legendLine = document.getElementById("lli_"+elementId+lineIdx);
     lineColor = legendLine.getAttribute("stroke");
     sourceCoord = convertCoord([intX, intY], renderWidth, renderHeight, [xmin,xmax], [ymin, ymax], logx, logy);
+    var gl = document.getElementById("gpl_" +elementId+lineIdx);
+    if(gl == null) { // create group for all tooltips on the same line (to be used in case line vibility is toggled)
+        gl = createSVGElement("g", {"id":"gpl_" + elementId+lineIdx});
+        svg.append(gl);
+    }
     const tooltip = createSVGElement("g", {"class":"tooltip", 
         "transform":"translate(" + topX + " " + topY + ")"
     });
@@ -302,7 +310,7 @@ function plotClicked(event, elementId, renderWidth, renderHeight, xmin, xmax, ym
     appendSvgText(tooltip, "x: " + num2eng([sourceCoord[0]]), 7, 6, 12, "start", "Sans,Arial", "white");
     appendSvgText(tooltip, "y: " + num2eng([sourceCoord[1]]), 7, 20, 12, "start", "Sans,Arial", "white");    
             
-    svg.append(tooltip);
+    gl.append(tooltip);
     var bbox = tooltip.getBBox();
     rect.setAttribute("width", bbox.width+4);
     rect.setAttribute("height", bbox.height+4);
@@ -956,7 +964,7 @@ function plotSvg(elementId, x, y, numLines,
         pointArray[2*ptIdx] = plotArea[2] * (ptx-xMin) / (xMax-xMin);
         pointArray[2*ptIdx+1] = plotArea[3] - plotArea[3]*(pty-yMin) / (yMax-yMin);
         };
-
+   
         var poly = document.createElementNS(ns, "polyline");
         //rect.setAttributeNS(null, 'class', "pl")
         poly.setAttribute("class", "l");

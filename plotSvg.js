@@ -1,3 +1,12 @@
+/**
+* Copyright (c) 2025, Thomas Baier
+* All rights reserved. (MIT Licensed)
+*
+* plotSvg.js (YaJsSvgPlot)
+* A small, interactive plotting tool
+* https://github.com/messier433/YaJsSvgPlot
+*/
+
 function num2eng (val) {
     const unitList = ['y', 'z', 'a', 'f', 'p', 'n', 'u', 'm', '', 'k', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y'];
     const zeroIndex = 8;
@@ -8,25 +17,25 @@ function num2eng (val) {
         const nn = val[idx].toExponential(5).split(/e/);
         let u = Math.floor(+nn[1] / 3) + zeroIndex;
         if (u > unitList.length - 1) {
-        u = unitList.length - 1;
+            u = unitList.length - 1;
         } else
         if (u < 0) {
-        u = 0;
-        }
+            u = 0;
+        };
 
         out[idx] =  Math.round((nn[0] * Math.pow(10, +nn[1] - (u - zeroIndex) * 3))*1000)/1000 + unitList[u];
-    }
+    };
     return out;
-}
+};
 function linspace (start, increment, stop) {
     numel = Math.floor((stop-start)/increment)+1;
     out = Array(numel);
 
     for(idx=0,val =start; val <= stop; ++idx,val+=increment){
         out[idx] = val;
-    }
+    };
     return out;
-}
+};
 
 function logspace (start, increment, stop) {
     numel = Math.floor((stop-start)/increment)+1;
@@ -34,9 +43,9 @@ function logspace (start, increment, stop) {
 
     for(idx=0,val =start; val <= stop; ++idx,val+=increment){
         out[idx] = Math.log10(val);
-    }
+    };
     return out;
-}
+};
 
 function decades (start, increment, stop) {
     numel = Math.floor((stop-start)/increment)+1;
@@ -44,9 +53,9 @@ function decades (start, increment, stop) {
 
     for(idx=0,val =start; val <= stop; ++idx,val+=increment){
         out[idx] = Math.pow(10,val);
-    }
+    };
     return out;
-}
+};
 
 function createSVGElement(ele, attrs) {
     const ns = "http://www.w3.org/2000/svg";
@@ -56,10 +65,10 @@ function createSVGElement(ele, attrs) {
     //create a for...in loop set attributes:
     for (let val in attrs) {
         element.setAttribute( val, attrs[val]);          
-    }
+    };
     //return the element with the set attributes:
     return element;
-}
+};
 function appendSvgText(parent, text, x, y, fontsize, textanchor = "middle", fontfamily="Sans,Arial", fill="black") {
     var textEl = createSVGElement("text", {"x":x, "y":y,
             "fill":fill, "font-size":fontsize, "text-anchor":textanchor, "font-family":fontfamily,
@@ -88,7 +97,7 @@ function toggleLineVisibility(elementId, lineIdx, nLegend, numLines) {
             document.getElementById("pl_"+elementId+lineIdx).style.display = "none";
             document.getElementById("lli_"+elementId+lineIdx).style.opacity = 0.3;
             document.getElementById("lti_"+elementId+lineIdx).style.opacity = 0.3;
-        }
+        };
     } else {
         for(idx = 0; idx < numLines; ++idx) {
             if (style === "none") { // make all visible again
@@ -102,12 +111,11 @@ function toggleLineVisibility(elementId, lineIdx, nLegend, numLines) {
                 if(idx < nLegend) {
                     document.getElementById("lli_"+elementId+idx).style.opacity = 0.3;
                     document.getElementById("lti_"+elementId+idx).style.opacity = 0.3;
-                }
-            }
+                };
+            };
         };
     };
-}
-
+};
 
 function removeInvalidPoints(pts) {
     var x = pts[0];
@@ -119,11 +127,11 @@ function removeInvalidPoints(pts) {
     if(x.length == y.length) {
         var newIdx = 0;
         for(idx = 0; idx < y.length; ++idx) {
-        if(isFinite(x[idx]) && isFinite(y[idx])) {
-            newX[newIdx] = x[idx];
-            newY[newIdx] = y[idx];
-            ++newIdx;
-        };
+            if(isFinite(x[idx]) && isFinite(y[idx])) {
+                newX[newIdx] = x[idx];
+                newY[newIdx] = y[idx];
+                ++newIdx;
+            };
         };
         if(newIdx < x.length) {
         newX = newX.slice(0, newIdx);
@@ -134,30 +142,30 @@ function removeInvalidPoints(pts) {
         var numLines = y.length/x.length;
         var numPoints = x.length;
         for(idx = 0; idx < numPoints; ++idx) {
-        var xValid = isFinite(x[idx]);
-        var yValid = true;
-        for(idxLines = 0; idxLines < numLines; ++idxLines) {
-            if(!isFinite(y[idxLines*numPoints +  idx])) {
-            yValid = false;
-            break;
+            var xValid = isFinite(x[idx]);
+            var yValid = true;
+            for(idxLines = 0; idxLines < numLines; ++idxLines) {
+                if(!isFinite(y[idxLines*numPoints +  idx])) {
+                yValid = false;
+                break;
+                };
+                newY[idxLines*numPoints + newIdx] = y[idxLines*numPoints + idx];  
             };
-            newY[idxLines*numPoints + newIdx] = y[idxLines*numPoints + idx];  
-        };
-        if(xValid && yValid) {
-            newX[newIdx] = x[idx];          
-            ++newIdx;
-        };
+            if(xValid && yValid) {
+                newX[newIdx] = x[idx];          
+                ++newIdx;
+            };
         };
         if(newIdx < x.length) {
-        newX = newX.slice(0, newIdx);
-        newIdx = 0;
-        for(idx = 0; idx < y.length; ++idx) {
-            if((idx % numPoints) < newX.length) {
-            newY[newIdx] = y[idx];
-            ++newIdx;
+            newX = newX.slice(0, newIdx);
+            newIdx = 0;
+            for(idx = 0; idx < y.length; ++idx) {
+                if((idx % numPoints) < newX.length) {
+                newY[newIdx] = y[idx];
+                ++newIdx;
+                }
             }
-        }
-        newY = newY.slice(0, newX.length*numLines);
+            newY = newY.slice(0, newX.length*numLines);
         };
     }
     return [newX, newY];
@@ -287,8 +295,7 @@ function plotClicked(event, elementId, renderWidth, renderHeight, xmin, xmax, ym
     }
 
     appendSvgText(tooltip, "x: " + num2eng([sourceCoord[0]]), 7, 6, 12, "start", "Sans,Arial", "white");
-    appendSvgText(tooltip, "y: " + num2eng([sourceCoord[1]]), 7, 20, 12, "start", "Sans,Arial", "white");
-    
+    appendSvgText(tooltip, "y: " + num2eng([sourceCoord[1]]), 7, 20, 12, "start", "Sans,Arial", "white");    
             
     svg.append(tooltip);
     var bbox = tooltip.getBBox();

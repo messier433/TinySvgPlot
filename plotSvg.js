@@ -87,30 +87,30 @@ function appendSvgLine(parent, x1, y1, x2,y2, stroke="black", strokedasharray=""
 };
 
 function toggleLineVisibility(elementId, lineIdx, nLegend, numLines) {
-    var style = document.getElementById("pl_"+elementId+lineIdx).style.display;
+    var style = document.getElementById("pl_"+elementId+"_"+lineIdx).style.display;
     if(numLines == 0) {
         if (style === "none") {
-            document.getElementById("pl_"+elementId+lineIdx).style.display = "block";
-            document.getElementById("lli_"+elementId+lineIdx).style.opacity = 1;
-            document.getElementById("lti_"+elementId+lineIdx).style.opacity = 1;
+            document.getElementById("pl_"+elementId+"_"+lineIdx).style.display = "block";
+            document.getElementById("lli_"+elementId+"_"+lineIdx).style.opacity = 1;
+            document.getElementById("lti_"+elementId+"_"+lineIdx).style.opacity = 1;
         } else {        
-            document.getElementById("pl_"+elementId+lineIdx).style.display = "none";
-            document.getElementById("lli_"+elementId+lineIdx).style.opacity = 0.3;
-            document.getElementById("lti_"+elementId+lineIdx).style.opacity = 0.3;
+            document.getElementById("pl_"+elementId+"_"+lineIdx).style.display = "none";
+            document.getElementById("lli_"+elementId+"_"+lineIdx).style.opacity = 0.3;
+            document.getElementById("lti_"+elementId+"_"+lineIdx).style.opacity = 0.3;
         };
     } else {
         for(idx = 0; idx < numLines; ++idx) {
             if (style === "none") { // make all visible again
-                document.getElementById("pl_"+elementId+idx).style.display = "block";
+                document.getElementById("pl_"+elementId+"_"+idx).style.display = "block";
                 if(idx < nLegend) {
-                    document.getElementById("lli_"+elementId+idx).style.opacity = 1;
-                    document.getElementById("lti_"+elementId+idx).style.opacity = 1;
+                    document.getElementById("lli_"+elementId+"_"+idx).style.opacity = 1;
+                    document.getElementById("lti_"+elementId+"_"+idx).style.opacity = 1;
                 }
             } else  if(idx != lineIdx) { // only keep selected one visible
-                document.getElementById("pl_"+elementId+idx).style.display = "none";
+                document.getElementById("pl_"+elementId+"_"+idx).style.display = "none";
                 if(idx < nLegend) {
-                    document.getElementById("lli_"+elementId+idx).style.opacity = 0.3;
-                    document.getElementById("lti_"+elementId+idx).style.opacity = 0.3;
+                    document.getElementById("lli_"+elementId+"_"+idx).style.opacity = 0.3;
+                    document.getElementById("lti_"+elementId+"_"+idx).style.opacity = 0.3;
                 };
             };
         };
@@ -284,7 +284,11 @@ function plotClicked(event, elementId, renderWidth, renderHeight, xmin, xmax, ym
     const legendLine = document.getElementById("lli_"+elementId+lineIdx);
     lineColor = legendLine.getAttribute("stroke");
     sourceCoord = convertCoord([intX, intY], renderWidth, renderHeight, [xmin,xmax], [ymin, ymax], logx, logy);
-    const tooltip = createSVGElement("g", {"class":"tooltip", "transform":"translate(" + topX + " " + topY + ")"});
+    const tooltip = createSVGElement("g", {"class":"tooltip", 
+        "transform":"translate(" + topX + " " + topY + ")"
+    });
+    tooltip.onclick = (event) => {event.srcElement.parentNode.remove()};
+   
     const rect = createSVGElement("rect", {"x":5, "y": -21, "stroke":"rgb(223,223,223)", "fill":lineColor, "rx":4, 
         "vector-effect":"non-scaling-stroke"});
     tooltip.append(rect);
@@ -308,6 +312,7 @@ function plotClicked(event, elementId, renderWidth, renderHeight, xmin, xmax, ym
     tooltip.append(marker)
 
 }
+
 
 function convertCoord(point, plotW, plotH, xlim, ylim, logx, logy) {
     x = point[0] / plotW * (xlim[1]-xlim[0]) + xlim[0];
@@ -411,7 +416,7 @@ function plotSvg(elementId, x, y, numLines,
     var mainDiv = document.createElement("div");
     el.appendChild(mainDiv);
     //mainDiv.setAttribute( "style", "width:100%;height:100vh;overflow:auto");   
-    mainDiv.setAttribute( "style", "width:100%;height:96vh;overflow:none");    
+    mainDiv.setAttribute( "style", "width:100%;height:calc(100vh - 16px);overflow:none");    
     //var svg = createSVGElement("svg", {"preserveAspectRatio":"xMinYMin meet",
     //    "viewBox":"0 0 " + width + " " + height});
     var svg = createSVGElement("svg", {"id":"svg_"+elementId, "width":"100%", "height":"100%"});
@@ -532,7 +537,7 @@ function plotSvg(elementId, x, y, numLines,
             yOffset = lineIdx * (hLetter + legendYSpacing) +  legendYSpacing;
     
                 // legend lines
-            var lineEl = createSVGElement("use", {"id": "lli_"+elementId+lineIdx, "x":legendXSpacing, "y":yOffset+hLetter/2,
+            var lineEl = createSVGElement("use", {"id": "lli_"+elementId+"_"+lineIdx, "x":legendXSpacing, "y":yOffset+hLetter/2,
                 "href":"#ll_"+elementId, "stroke":colorMapRGB[colorIdx], 
                 "onclick":"toggleLineVisibility(\""+elementId+"\",\""+lineIdx+"\", 0, 0)",
                 "ondblclick":"toggleLineVisibility(\""+elementId+"\",\""+lineIdx+"\","  + nLegend + "," + numLines+")"
@@ -541,7 +546,7 @@ function plotSvg(elementId, x, y, numLines,
     
     
             // legend labels
-            var textEl = createSVGElement("text", {"id": "lti_"+elementId+lineIdx, "class":"cll", 
+            var textEl = createSVGElement("text", {"id": "lti_"+elementId+"_"+lineIdx, "class":"cll", 
                 "x":legendXSpacing+legendLineLength+legendXSpacing, "y":yOffset+hLetter/2, 
                 "onclick":"toggleLineVisibility(\""+elementId+"\",\""+lineIdx+"\",0, 0)",
                 "ondblclick":"toggleLineVisibility(\""+elementId+"\",\""+lineIdx+"\","  + nLegend + "," + numLines+")"
@@ -573,7 +578,7 @@ function plotSvg(elementId, x, y, numLines,
             yOffset = lineIdx * (hLetter + legendYSpacing) +  legendYSpacing;
     
             // create rectangle to capture mouse event
-            var rectEl = createSVGElement("rect", {"id": "lri_"+elementId+lineIdx, "x":legendXSpacing, "y":yOffset,
+            var rectEl = createSVGElement("rect", {"id": "lri_"+elementId+"_"+lineIdx, "x":legendXSpacing, "y":yOffset,
                 "width":wLegend, "height":hLetter + legendYSpacing, "fill":"none",
                 "pointer-events":"visible", "onclick":"toggleLineVisibility(\""+elementId+"\",\""+lineIdx+"\",0,0)",
                 "ondblclick":"toggleLineVisibility(\""+elementId+"\",\""+lineIdx+"\"," + nLegend + "," + numLines + ")"   
@@ -954,7 +959,7 @@ function plotSvg(elementId, x, y, numLines,
         var poly = document.createElementNS(ns, "polyline");
         //rect.setAttributeNS(null, 'class', "pl")
         poly.setAttribute("class", "l");
-        poly.setAttribute("id", "pl_" +elementId+lineIdx);
+        poly.setAttribute("id", "pl_" +elementId+"_"+lineIdx);
         poly.setAttribute("points", pointArray.join(" "));
         poly.setAttribute("stroke", colorMapRGB[colorIdx]);
                 

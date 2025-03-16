@@ -253,30 +253,37 @@ function plotClicked(event, elementId, renderWidth, renderHeight, xmin, xmax, ym
     // search closest points on line
     const points = closestEl.points;
     var closestIdx = 0;
-    var closestDist = Infinity;
 
-    for(idx = 0; idx < points.length; ++idx ) {
+    for(idx = 1; idx < points.length; ++idx ) {
         const ptX = points[idx].x;
         const ptY = points[idx].y;
-        const dist = (ptX-plotX)*(ptX-plotX) + (ptY-plotY)*(ptY-plotY);
-        if(dist < closestDist) {
-            closestDist = dist;
-            closestIdx = idx;
+        if(points[idx].x >= plotX && points[idx-1].x <= plotX) {
+            closestIdx = idx-1;
+            break;
         }
     }
-    const snapDist = 6*6; // snap to exact point if clicked within distance
-    var nextIdx = (points[closestIdx].x > plotX) ? closestIdx -1 : closestIdx +1;
-    nextIdx = (nextIdx < 0) ? 0 : nextIdx;
+
+    var nextIdx = closestIdx +1;
     nextIdx = (nextIdx >= points.length) ? points.length-1 : nextIdx;
-    nextIdx = (closestDist < snapDist) ? closestIdx : nextIdx;
+
+    const snapDist = 6*6; // snap to exact point if clicked within distance
+    var idx = (plotX - points[closestIdx].x) > (points[nextIdx].x-plotX) ? nextIdx : closestIdx;
+    const dist = (points[idx].x-plotX)*(points[idx].x-plotX) + (points[idx].y-plotY)*(points[idx].y-plotY);
+    nextIdx = (dist < snapDist) ? idx : nextIdx;
+    closestIdx = (dist < snapDist) ? idx : closestIdx;
 
     // interpolate between the 2 points
-    var dx = (points[closestIdx].x - plotX) / (points[closestIdx].x - points[nextIdx].x);
+    const spanX = points[closestIdx].x - points[nextIdx].x;
+    const spanY = points[closestIdx].y - points[nextIdx].y;
+    const span = spanX*spanX+spanY*spanY;
+    const dx = (points[closestIdx].x - plotX);// / spanX;
+    const dy = (points[closestIdx].y - plotY);// / spanY;
+    var d = dx * (spanX/span) + dy * (spanY/span)
     if(nextIdx == closestIdx)
-        dx = 1;
+        d = 1;
 
-    const intX = points[nextIdx].x * dx + points[closestIdx].x * (1-dx);
-    const intY = points[nextIdx].y * dx + points[closestIdx].y * (1-dx);
+    const intX = points[nextIdx].x * d + points[closestIdx].x * (1-d);
+    const intY = points[nextIdx].y * d + points[closestIdx].y * (1-d);
     const topX = intX/scaleX + svgDraw.x.baseVal.value;
     const topY = intY/scaleY + svgDraw.y.baseVal.value;
 
@@ -298,17 +305,17 @@ function plotClicked(event, elementId, renderWidth, renderHeight, xmin, xmax, ym
     
     tooltip.onclick = (event) => {if(event.srcElement.parentNode.tagName == "g") event.srcElement.parentNode.remove()};
    
-    const rect = createSVGElement("rect", {"x":5, "y": -21, "stroke":"rgb(223,223,223)", "fill":lineColor, "rx":4, 
+    const rect = createSVGElement("rect", {"x":5, "y": -23, "stroke":"rgb(223,223,223)", "fill":lineColor, "rx":4, 
         "vector-effect":"non-scaling-stroke"});
     tooltip.append(rect);
     if(legendItem != null) {
-        text = appendSvgText(tooltip, legendItem.textContent, 7, -9, 12, "start", "Sans,Arial", "white" );  
+        text = appendSvgText(tooltip, legendItem.textContent, 7, -11, 12, "start", "Sans,Arial", "white" );  
         text.setAttribute("font-weight","bold");
-        line = appendSvgLine(tooltip, 5, -6, 5,-6, stroke="white");
+        line = appendSvgLine(tooltip, 5, -8, 5,-8, stroke="white");
     }
 
-    appendSvgText(tooltip, "x: " + num2eng([sourceCoord[0]]), 7, 6, 12, "start", "Sans,Arial", "white");
-    appendSvgText(tooltip, "y: " + num2eng([sourceCoord[1]]), 7, 20, 12, "start", "Sans,Arial", "white");    
+    appendSvgText(tooltip, "x: " + num2eng([sourceCoord[0]]), 7, 4, 12, "start", "Sans,Arial", "white");
+    appendSvgText(tooltip, "y: " + num2eng([sourceCoord[1]]), 7, 18, 12, "start", "Sans,Arial", "white");    
             
     gl.append(tooltip);
     var bbox = tooltip.getBBox();
@@ -358,7 +365,7 @@ function getNearestLine(x, y) {
 function plotSvg(elementId, x, y, numLines, 
 {title = "", subtitle = "", xlabel = "", ylabel="", xlim=[], ylim=[], 
     legend = [], xScale = "linear", yScale = "linear", grid = true, 
-    gridMinor = [], legendLocation = 'northeast'
+    gridMinor = [], legendLocation = 'northeastoutside'
 }={}
 )
 {      
@@ -377,8 +384,8 @@ function plotSvg(elementId, x, y, numLines,
     var nXMinorTicks = 10; // minor ticks  (max value; will be adjusted)
     var nYMinorTicks = 10; // minor ticks  (max value; will be adjusted)
     const normTicks = [1, 2, 5, 10];
-    const xAxesSpacing = axesLblFontSize*5;
-    const yAxesSpacing = axesLblFontSize*3;
+    const xAxesSpacing = axesLblFontSize*4;
+    const yAxesSpacing = axesLblFontSize*2;
     const colorMapRGB =  ["rgb(0,114,190)", "rgb(218,83,25)", "rgb(238,178,32)", 
                         "rgb(126,47,142)", "rgb(119,173,48)", "rgb(77,191,239)",
                         "rgb(163,20,47)"];
@@ -618,7 +625,7 @@ function plotSvg(elementId, x, y, numLines,
         svgLeg.setAttribute("y", yLegend);
         svgLeg.setAttribute("viewBox", "0 0 " + wLegend + " " + hLegend)
     }   else {
-        plotWidth -= legendLineLength + 3*legendXSpacing + legendFontSize;
+        plotWidth -= xAxesSpacing;
     }
 
     plotArea = [plotAreaXOffset, plotAreaYOffset, plotWidth, plotHeight];

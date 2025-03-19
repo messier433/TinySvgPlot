@@ -7,6 +7,11 @@
 * https://github.com/messier433/YaJsSvgPlot
 */
 
+function getEl(id)
+{
+    return document.getElementById(id);
+}
+
 function getMax(arr) {
     let len = arr.length;
     let max = -Infinity;
@@ -79,63 +84,62 @@ function decades (start, increment, stop) {
     return out;
 };
 
-function createSVGElement(ele, attrs) {
+function addSvgEl(parent, ele, attrs) {
     const ns = "http://www.w3.org/2000/svg";
     //create the element with a specified string:
-    var element = document.createElementNS(ns, ele);
-
+    var element = (typeof ele == "string") ? document.createElementNS(ns, ele) : ele;
     //create a for...in loop set attributes:
     for (let val in attrs) {
         element.setAttribute( val, attrs[val]);          
     };
+    if(parent != null)
+        parent.appendChild(element);
     //return the element with the set attributes:
     return element;
 };
-function appendSvgText(parent, text, x, y, fontsize, textanchor = "middle", fontfamily="Sans,Arial", fill="black") {
-    var textEl = createSVGElement("text", {"x":x, "y":y,
+function addSvgTxt(parent, text, x, y, fontsize, textanchor = "middle", fontfamily="Sans,Arial", fill="black") {
+    var textEl = addSvgEl(parent, "text", {"x":x, "y":y,
             "fill":fill, "font-size":fontsize, "text-anchor":textanchor, "font-family":fontfamily,
             "stroke-width": 1
             });
     textEl.append(document.createTextNode(text));              
-    parent.appendChild(textEl);
     return textEl;
 }
-function appendSvgLine(parent, x1, y1, x2,y2, stroke="black", strokedasharray="") {
-    var lineEl = createSVGElement("line", {"x1":x1, "y1":y1,"x2":x2, "y2":y2,
+function addSvgLn(parent, x1, y1, x2,y2, stroke="black", strokedasharray="") {
+    var lineEl = addSvgEl(parent, "line", {"x1":x1, "y1":y1,"x2":x2, "y2":y2,
             "stroke":stroke, "stroke-width": 1, "stroke-dasharray": strokedasharray, "vector-effect":"non-scaling-stroke"
     });  
-    parent.appendChild(lineEl);
     return lineEl;
 };
 
 function toggleLineVisibility(elementId, lineIdx, numLines) {
-    var style = document.getElementById("pl_"+elementId+"_"+lineIdx).style.display;
+    var style = getEl("pl_"+elementId+"_"+lineIdx).style.display;
     
     if(numLines == 0) {
-        const tooltips = document.getElementById("gpl_" +elementId+"_"+lineIdx); // tooltip group
+        const tooltips = getEl("gpl_" +elementId+"_"+lineIdx); // tooltip group
         if (style === "none") {
-            document.getElementById("pl_"+elementId+"_"+lineIdx).style.display = "block";
-            document.getElementById("lli_"+elementId+"_"+lineIdx).style.opacity = 1;
-            document.getElementById("lti_"+elementId+"_"+lineIdx).style.opacity = 1;
+            getEl("pl_"+elementId+"_"+lineIdx).style.display = "block";
+            getEl("lli_"+elementId+"_"+lineIdx).style.opacity = 1;
+            getEl("lti_"+elementId+"_"+lineIdx).style.opacity = 1;
             if(tooltips!=null) tooltips.style.display = "block";
         } else {        
-            document.getElementById("pl_"+elementId+"_"+lineIdx).style.display = "none";
-            document.getElementById("lli_"+elementId+"_"+lineIdx).style.opacity = 0.3;
-            document.getElementById("lti_"+elementId+"_"+lineIdx).style.opacity = 0.3;
+            getEl("pl_"+elementId+"_"+lineIdx).style.display = "none";
+            getEl("lli_"+elementId+"_"+lineIdx).style.opacity = 0.3;
+            getEl("lti_"+elementId+"_"+lineIdx).style.opacity = 0.3;
             if(tooltips!=null) tooltips.style.display = "none";
         };
     } else {
         for(idx = 0; idx < numLines; ++idx) {
-            const tooltips = document.getElementById("gpl_" +elementId+"_"+idx); // tooltip group        
+            const tooltips = getEl("gpl_" +elementId+"_"+idx); // tooltip group        
             if (style === "none") { // make all visible again
-                document.getElementById("pl_"+elementId+"_"+idx).style.display = "block";
-                document.getElementById("lli_"+elementId+"_"+idx).style.opacity = 1;
-                document.getElementById("lti_"+elementId+"_"+idx).style.opacity = 1;
+                getEl("pl_"+elementId+"_"+idx).style.display = "block";
+                getEl("lli_"+elementId+"_"+idx).style.opacity = 1;
+                getEl("lti_"+elementId+"_"+idx).style.opacity = 1;
                 if(tooltips!=null) tooltips.style.display = "block";
             } else  if(idx != lineIdx) { // only keep selected one visible
-                document.getElementById("pl_"+elementId+"_"+idx).style.display = "none";
-                document.getElementById("lli_"+elementId+"_"+idx).style.opacity = 0.3;
-                document.getElementById("lti_"+elementId+"_"+idx).style.opacity = 0.3;
+                getEl("pl_"+elementId+"_"+idx).style.display = "none";
+                getEl("lli_"+elementId+"_"+idx).style.opacity = 0.3;
+                getEl("lti_"+elementId+"_"+idx).style.opacity = 0.3;
                 if(tooltips!=null) tooltips.style.display = "none";
             };
         };
@@ -198,9 +202,9 @@ function removeInvalidPoints(pts) {
 }
 
 function resizeSvg(elementId, padX, padY, hLegendItems, hLegendMargin) {
-    var svgLeg = document.getElementById("svg_leg_"+elementId);
-    var svgDraw = document.getElementById("svg_draw_"+elementId);
-    var svg = document.getElementById("svg_"+elementId);
+    var svgLeg = getEl("svg_leg_"+elementId);
+    var svgDraw = getEl("svg_draw_"+elementId);
+    var svg = getEl("svg_"+elementId);
     
     const parentWidth = svg.width.baseVal.value;
     const parentHeight = svg.height.baseVal.value;
@@ -240,8 +244,8 @@ function resizeSvg(elementId, padX, padY, hLegendItems, hLegendMargin) {
 };
 
 function scrollLegend(event, elementId, hLegendItems){
-    var svgLeg = document.getElementById("svg_leg_"+elementId);
-    var rectLeg = document.getElementById("rect_leg_"+elementId);
+    var svgLeg = getEl("svg_leg_"+elementId);
+    var rectLeg = getEl("rect_leg_"+elementId);
     svgLeg.viewBox.baseVal.y +=  event.deltaY;
     const minScroll = 0;
     const maxScroll = hLegendItems - svgLeg.height.baseVal.value;
@@ -256,8 +260,8 @@ function scrollLegend(event, elementId, hLegendItems){
 }
 
 function plotClicked(event, elementId, renderWidth, renderHeight, xmin, xmax, ymin, ymax, logx, logy) {
-    svgDraw = document.getElementById("svg_draw_"+elementId);
-    svg = document.getElementById("svg_"+elementId);
+    svgDraw = getEl("svg_draw_"+elementId);
+    svg = getEl("svg_"+elementId);
     closestEl = getNearestLine(event.clientX, event.clientY)
     if(closestEl == null)
         return;
@@ -311,45 +315,39 @@ function plotClicked(event, elementId, renderWidth, renderHeight, xmin, xmax, ym
     const prefix = "pl_" + elementId;
     const lineId = closestEl.id;
     const lineIdx = lineId.slice(prefix.length, lineId.length);
-    const legendItem = document.getElementById("lti_"+elementId+lineIdx);
-    const plotLine = document.getElementById("pl_"+elementId+lineIdx);
+    const legendItem = getEl("lti_"+elementId+lineIdx);
+    const plotLine = getEl("pl_"+elementId+lineIdx);
     lineColor = plotLine.getAttribute("stroke");
     sourceCoord = convertCoord([intX, intY], renderWidth, renderHeight, [xmin,xmax], [ymin, ymax], logx, logy);
-    var gl = document.getElementById("gpl_" +elementId+lineIdx);
+    var gl = getEl("gpl_" +elementId+lineIdx);
     if(gl == null) { // create group for all tooltips on the same line (to be used in case line vibility is toggled)
-        gl = createSVGElement("g", {"id":"gpl_" + elementId+lineIdx});
-        svg.append(gl);
+        gl = addSvgEl(svg, "g", {"id":"gpl_" + elementId+lineIdx});
     }
-    const tooltip = createSVGElement("g", {"class":"tooltip", 
+    const tooltip = addSvgEl(gl, "g", {"class":"tooltip", 
         "transform":"translate(" + topX + " " + topY + ")"
     });
     
     tooltip.onclick = (event) => {if(event.srcElement.parentNode.tagName == "g") event.srcElement.parentNode.remove()};
    
-    const rect = createSVGElement("rect", {"x":5, "y": -9, "stroke":"rgb(223,223,223)", "fill":lineColor, "rx":4, 
+    const rect = addSvgEl(tooltip, "rect", {"x":5, "y": -9, "stroke":"rgb(223,223,223)", "fill":lineColor, "rx":4, 
         "vector-effect":"non-scaling-stroke"});
-    tooltip.append(rect);
 	var line = null;
     if(legendItem != null) {
-        text = appendSvgText(tooltip, legendItem.textContent, 7, -11, 12, "start", "Sans,Arial", "white" );  
-        text.setAttribute("font-weight","bold");
-        line = appendSvgLine(tooltip, 5, -8, 5,-8, stroke="white");
+        text = addSvgTxt(tooltip, legendItem.textContent, 7, -11, 12, "start", "Sans,Arial", "white" ); 
+        addSvgEl(null, text, {"font-weight":"bold"});
+        line = addSvgLn(tooltip, 5, -8, 5,-8, stroke="white");
 		rect.setAttribute("y",-23);
     }
 
-    appendSvgText(tooltip, "x: " + num2eng([sourceCoord[0]]), 7, 4, 12, "start", "Sans,Arial", "white");
-    appendSvgText(tooltip, "y: " + num2eng([sourceCoord[1]]), 7, 18, 12, "start", "Sans,Arial", "white");    
+    addSvgTxt(tooltip, "x: " + num2eng([sourceCoord[0]]), 7, 4, 12, "start", "Sans,Arial", "white");
+    addSvgTxt(tooltip, "y: " + num2eng([sourceCoord[1]]), 7, 18, 12, "start", "Sans,Arial", "white");    
             
-    gl.append(tooltip);
     var bbox = tooltip.getBBox();
-    rect.setAttribute("width", bbox.width+4);
-    rect.setAttribute("height", bbox.height+4);
+    addSvgEl(null, rect, {"width": bbox.width+4, "height": bbox.height+4});
     if(line != null)
         line.setAttribute("x2", bbox.width+4+5);
 
-    const marker = createSVGElement("rect", {"x":-2, "y": -2,"width":4, "height":4, "fill":"black"});
-    tooltip.append(marker)
-
+    const marker = addSvgEl(tooltip, "rect", {"x":-2, "y": -2,"width":4, "height":4, "fill":"black"});
 }
 
 function plotMouseDown(event, elementId) {
@@ -357,21 +355,20 @@ function plotMouseDown(event, elementId) {
         return;
 
     // else start zoom
-    svg = document.getElementById("svg_"+elementId);
-    var rectZoom = createSVGElement("rect", {"id":"zoom_rect"+elementId, "x":event.offsetX,"y":event.offsetY,"height":0,"width":0,
+    svg = getEl("svg_"+elementId);
+    addSvgEl(svg, "rect", {"id":"zoom_rect"+elementId, "x":event.offsetX,"y":event.offsetY,"height":0,"width":0,
         "fill":"black", "fill-opacity":"0.3"});
-    svg.appendChild(rectZoom); 
     svg.onmousemove = (eventNew) => plotZoom(eventNew, elementId);
 }
 
 function plotZoom(event, elementId) {
     //console.log(event)
-    rectZoom = document.getElementById("zoom_rect"+elementId);
+    rectZoom = getEl("zoom_rect"+elementId);
     rectZoom.width.baseVal.value = event.offsetX - rectZoom.x.baseVal.value;
     rectZoom.height.baseVal.value = event.offsetY - rectZoom.y.baseVal.value;
     if(event.buttons != 2) {
         rectZoom.remove();
-        svg = document.getElementById("svg_"+elementId);
+        svg = getEl("svg_"+elementId);
         svg.onmousemove = null;
     }
 }
@@ -477,15 +474,14 @@ function plotSvg(elementId, x, y, numLines,
     y = newPts[1];
 	
 
-    var el = document.getElementById(elementId);
+    var el = getEl(elementId);
     var mainDiv = document.createElement("div");
     el.appendChild(mainDiv);
     //mainDiv.setAttribute( "style", "width:100%;height:100vh;overflow:auto");   
     mainDiv.setAttribute( "style", "width:100%;height:calc(100vh - 16px);overflow:none");    
-    //var svg = createSVGElement("svg", {"preserveAspectRatio":"xMinYMin meet",
+    //var svg = addSvgEl("svg", {"preserveAspectRatio":"xMinYMin meet",
     //    "viewBox":"0 0 " + width + " " + height});
-    var svg = createSVGElement("svg", {"id":"svg_"+elementId, "width":"100%", "height":"100%"});
-    mainDiv.appendChild(svg);
+    var svg = addSvgEl(mainDiv, "svg", {"id":"svg_"+elementId, "width":"100%", "height":"100%"});
     var width=svg.width.baseVal.value;
     var height=svg.height.baseVal.value; 
 	width = (width < 1200) ? 1200 : width; // too small values can cause errors (negative dimensions)
@@ -542,7 +538,7 @@ function plotSvg(elementId, x, y, numLines,
     // create legend
     //////////////////////////////////////
     // create group
-    var gleg = createSVGElement("g");
+    var gleg = addSvgEl(null, "g");
     var hLegendMargin = 0;
     if(legend.length>0 && numLines > 0 && x.length > 0) {  
         // set legend dimensions depending on location
@@ -566,17 +562,15 @@ function plotSvg(elementId, x, y, numLines,
         svg.appendChild(gleg);     
         
         // define legend line        
-        var defsll = createSVGElement("defs");
-        svg.appendChild(defsll); 
-        var ll = createSVGElement("line", {"id":"ll_"+elementId, "x1":0, "y1":0,"x2":legendLineLength,"y2":0, 
+        var defsll = addSvgEl(svg, "defs");
+        addSvgEl(defsll, "line", {"id":"ll_"+elementId, "x1":0, "y1":0,"x2":legendLineLength,"y2":0, 
             "stroke-width":2,"vector-effect":"non-scaling-stroke"});
-        defsll.appendChild(ll); 
 
         wLegendMax = maxLegendWidth;
         hLetter = legendFontSize;
         
         // draw legend box (change width later)
-        var svgLeg = createSVGElement("svg", {"id":"svg_leg_"+elementId});
+        var svgLeg = addSvgEl(gleg, "svg", {"id":"svg_leg_"+elementId});
     
         var nLegend = numLines; 
         var legendTmp = legend;0
@@ -588,42 +582,34 @@ function plotSvg(elementId, x, y, numLines,
         var hLegend = (hLegendItems > hLegendMax) ? hLegendMax : hLegendItems;
         var legendTrunc = 0;
        
-        svgLeg.setAttribute("x", "100%");
-        svgLeg.setAttribute("height", hLegend);
-        gleg.appendChild(svgLeg);        
+        addSvgEl(null, svgLeg, {"x": "100%", "height": hLegend});       
     
         // draw legend box (change width later)
-        var recleg = createSVGElement("rect", {"id":"rect_leg_"+elementId, "x":0,"y":0,"height":"100%",
-            "fill":legFill,"stroke":"black","stroke-width":2,"vector-effect":"non-scaling-stroke"});
-            svgLeg.appendChild(recleg); 
-            
-            
+        var recleg = addSvgEl(svgLeg, "rect", {"id":"rect_leg_"+elementId, "x":0,"y":0,"height":"100%",
+            "fill":legFill,"stroke":"black","stroke-width":2,"vector-effect":"non-scaling-stroke"});          
+
         // create legend items
         for(lineIdx = 0; lineIdx < nLegend; ++lineIdx) {
             colorIdx = lineIdx % colorMapRGB.length;
             yOffset = lineIdx * (hLetter + legendYSpacing) +  legendYSpacing;
     
-            var legItemGroup = new createSVGElement("g", {"id": "lgi_"+elementId+"_"+lineIdx,
+            var legItemGroup = new addSvgEl(svgLeg, "g", {"id": "lgi_"+elementId+"_"+lineIdx,
                 "onclick": "toggleLineVisibility(\"" +  elementId +"\", " + lineIdx +", 0);",
                 "ondblclick": "toggleLineVisibility(\"" +  elementId +"\", " + lineIdx +", "+numLines+");"
             });
-    
-            svgLeg.appendChild(legItemGroup);
-                // legend lines
-            var lineEl = createSVGElement("use", {"id": "lli_"+elementId+"_"+lineIdx, "x":legendXSpacing, "y":yOffset+hLetter/2,
+
+            // legend lines
+            addSvgEl(legItemGroup, "use", {"id": "lli_"+elementId+"_"+lineIdx, "x":legendXSpacing, "y":yOffset+hLetter/2,
                 "href":"#ll_"+elementId, "stroke":colorMapRGB[colorIdx]});
-                legItemGroup.appendChild(lineEl);
-    
-    
+   
             // legend labels
-            var textEl = createSVGElement("text", {"id": "lti_"+elementId+"_"+lineIdx, "class":"cll", 
+            var textEl = addSvgEl(legItemGroup, "text", {"id": "lti_"+elementId+"_"+lineIdx, "class":"cll", 
                 "x":legendXSpacing+legendLineLength+legendXSpacing, "y":yOffset+hLetter/2});
             if(lineIdx < legendTmp.length) {
                 textEl.append(document.createTextNode(legendTmp[lineIdx]));  
             }  else {
                 textEl.append(document.createTextNode("")); 
             }
-            legItemGroup.appendChild(textEl);
             
         }
 
@@ -639,13 +625,12 @@ function plotSvg(elementId, x, y, numLines,
             colorIdx = lineIdx % colorMapRGB.length;
             yOffset = lineIdx * (hLetter + legendYSpacing) +  legendYSpacing;
     
-            const legItemGroup = document.getElementById( "lgi_"+elementId+"_"+lineIdx);
+            const legItemGroup = getEl( "lgi_"+elementId+"_"+lineIdx);
 
             // create rectangle to capture mouse event
-            var rectEl = createSVGElement("rect", {"id": "lri_"+elementId+"_"+lineIdx, "x":legendXSpacing, "y":yOffset,
+            addSvgEl(legItemGroup, "rect", {"id": "lri_"+elementId+"_"+lineIdx, "x":legendXSpacing, "y":yOffset,
                 "width":wLegend, "height":hLetter + legendYSpacing, "fill":"none",
                 "pointer-events":"visible"});
-            legItemGroup.appendChild(rectEl);
         }
 
         var xLegend = 0;
@@ -667,9 +652,7 @@ function plotSvg(elementId, x, y, numLines,
 
         // move legend to final location   
         //gleg.setAttribute( "transform", "translate(" + xLegend +  " " + yLegend + ")");
-        svgLeg.setAttribute("x", "calc(100% + " + xLegend + "px)");
-        svgLeg.setAttribute("y", yLegend);
-        svgLeg.setAttribute("viewBox", "0 0 " + wLegend + " " + hLegend)
+        addSvgEl(null, svgLeg, {"x": "calc(100% + " + xLegend + "px)", "y": yLegend, "viewBox": "0 0 " + wLegend + " " + hLegend});
     }   else {
         plotWidth -= xAxesSpacing;
     }
@@ -679,13 +662,12 @@ function plotSvg(elementId, x, y, numLines,
     ///////////////////////////////
     // add title
     ///////////////////////////////
-    var svgTop= createSVGElement("svg", {"x": plotArea[0], "overflow":"visible", "width":"calc(100% - "+padding[0]+"px)"});
-    svg.appendChild(svgTop);
+    var svgTop= addSvgEl(svg, "svg", {"x": plotArea[0], "overflow":"visible", "width":"calc(100% - "+padding[0]+"px)"});
     var titleYOffset = 0;
     if(title.length>0) {
         for(idx = 0; idx < titleLines.length; ++idx) {
             titleYOffset = titleYOffset + titleFontSize + fontSpacing;
-            appendSvgText(svgTop, titleLines[idx], "50%", titleYOffset, titleFontSize);
+            addSvgTxt(svgTop, titleLines[idx], "50%", titleYOffset, titleFontSize);
         };
     };  
     ///////////////////////////////
@@ -694,7 +676,7 @@ function plotSvg(elementId, x, y, numLines,
     if(subtitle.length>0) {
         for(idx = 0; idx < subtitleLines.length; ++idx) {
             titleYOffset = titleYOffset + subTitleFontSize + fontSpacing;
-            appendSvgText(svgTop, subtitleLines[idx], "50%", titleYOffset, subTitleFontSize);
+            addSvgTxt(svgTop, subtitleLines[idx], "50%", titleYOffset, subTitleFontSize);
         };    
     };
 
@@ -702,27 +684,23 @@ function plotSvg(elementId, x, y, numLines,
     // draw xlabel
     ///////////////////////////////
     var gBottomShift = -height + plotArea[1] + plotArea[3];
-    var gBottom = createSVGElement("g", {"transform":"translate(" + plotArea[0]  + " " + gBottomShift + ")"});
-    var svgBottom = createSVGElement("svg", {"overflow":"visible","y":"100%", "width":"calc(100% - "+padding[0]+"px)"});
-    gBottom.appendChild(svgBottom);
-    svg.appendChild(gBottom);
+    var gBottom = addSvgEl(svg, "g", {"transform":"translate(" + plotArea[0]  + " " + gBottomShift + ")"});
+    var svgBottom = addSvgEl(gBottom, "svg", {"overflow":"visible","y":"100%", "width":"calc(100% - "+padding[0]+"px)"});
     if(xlabel.length>0) {
-        //appendSvgText(svg, xlabel,"50%", plotArea[1] + plotArea[3] + axesLblFontSize*2.4 + fontSpacing, axesLblFontSize);
-        appendSvgText(svgBottom, xlabel,"50%", axesLblFontSize*3, axesLblFontSize);
+        //addSvgTxt(svg, xlabel,"50%", plotArea[1] + plotArea[3] + axesLblFontSize*2.4 + fontSpacing, axesLblFontSize);
+        addSvgTxt(svgBottom, xlabel,"50%", axesLblFontSize*3, axesLblFontSize);
     };
 
     ///////////////////////////////
     // draw ylabel
     ///////////////////////////////
-    var svgLeft= createSVGElement("svg", {"y": plotArea[1], "overflow":"visible", "height":"calc(100% - "+padding[1]+"px)"});
-    svg.appendChild(svgLeft);
+    var svgLeft= addSvgEl(svg, "svg", {"y": plotArea[1], "overflow":"visible", "height":"calc(100% - "+padding[1]+"px)"});
     if(ylabel.length>0) { 
-        var text = createSVGElement("text", {"writing-mode":"sideways-lr", 
+        var text = addSvgEl(svgLeft, "text", {"writing-mode":"sideways-lr", 
         "fill":"black", "font-size":axesLblFontSize, "text-anchor":"middle", 
         "font-family":"Sans,Arial", "stroke-width": 1, "y":"50%", "x":(plotArea[0] - axesLblFontSize*4 - fontSpacing) 
         });  
         text.append(document.createTextNode(ylabel));
-        svgLeft.appendChild(text);  
     };
 
     ///////////////////////////////
@@ -772,7 +750,7 @@ function plotSvg(elementId, x, y, numLines,
     //////////////////////////////
     var drawWidth = svg.width.baseVal.value - padding[0];
     var drawHeight = svg.height.baseVal.value - padding[1];    
-    var svgDraw = createSVGElement("svg", {"id":"svg_draw_"+elementId, "preserveAspectRatio":"none",
+    var svgDraw = addSvgEl(svg, "svg", {"id":"svg_draw_"+elementId, "preserveAspectRatio":"none",
         "viewBox":"0 0 " + plotArea[2] + " " + plotArea[3], 
         "width":drawWidth, "height":drawHeight, 
         "x":plotArea[0], "y":plotArea[1]});       
@@ -908,33 +886,31 @@ function plotSvg(elementId, x, y, numLines,
     // axis labels
     for(idx = 0; idx <= nYTicks; ++idx) {
         var yTickPos =  - yTickOffsetPct + dYTickPct * idx;
-        var textEl = appendSvgText(svgLeft, yTickLabel[nYTicks-idx], plotArea[0] - axesLblFontSize*0.5, yTickPos+"%", axesLblFontSize, "end");
+        var textEl = addSvgTxt(svgLeft, yTickLabel[nYTicks-idx], plotArea[0] - axesLblFontSize*0.5, yTickPos+"%", axesLblFontSize, "end");
         textEl.setAttribute("alignment-baseline","middle");
     }
     for(idx = 0; idx <= nXTicks; ++idx) {
         var xTickPos = dXTickPct * idx + xTickOffsetPct;  
-        appendSvgText(svgBottom, xTickLabel[idx], xTickPos+"%", axesLblFontSize*1.4, axesLblFontSize);
+        addSvgTxt(svgBottom, xTickLabel[idx], xTickPos+"%", axesLblFontSize*1.4, axesLblFontSize);
     }
 
     // draw tick lines via pattern (in case we use custom ticks, this cant
     // be used anymore, see below's loop then for an alternative)
-    var defsgy = document.createElementNS(ns, "defs");
-    svgDraw.appendChild(defsgy);
+    var defsgy = addSvgEl(svgDraw, "defs");    
     if(minorGridY && nYMinorTicks > 0) {
-        var mgy = createSVGElement("g", { "id": "mgy_"+elementId});
+        var mgy = addSvgEl(defsgy, "g", { "id": "mgy_"+elementId});
         if(grid) {
-        appendSvgLine(mgy, 0, 1, plotArea[2],1, stroke="rgb(223,223,223)", strokedasharray="2 4");
+        addSvgLn(mgy, 0, 1, plotArea[2],1, stroke="rgb(223,223,223)", strokedasharray="2 4");
         };
-        appendSvgLine(mgy, 0, 1, minorTickLength,1);
-        appendSvgLine(mgy, plotArea[2] - minorTickLength, 1, plotArea[2], 1);
+        addSvgLn(mgy, 0, 1, minorTickLength,1);
+        addSvgLn(mgy, plotArea[2] - minorTickLength, 1, plotArea[2], 1);
         defsgy.appendChild(mgy);
     };
 
-    var py = createSVGElement('pattern', {"id":"yTick_"+elementId, "x":0, 
+    var py = addSvgEl(defsgy, "pattern", {"id":"yTick_"+elementId, "x":0, 
         "y":yTickOffset-1, "width": plotArea[2], "height": dYTick,
         "patternUnits": "userSpaceOnUse"
         });
-    defsgy.appendChild(py);
 
     if(minorGridY && nYMinorTicks > 0) {
         if(logYEnbl && yTick == 1) {
@@ -944,39 +920,34 @@ function plotSvg(elementId, x, y, numLines,
         minorTickPos = linspace(0, (1/nYMinorTicks)*dYTick, dYTick);
         };
         for(idx = 1; idx < minorTickPos.length-1; ++idx) {
-        var usey = createSVGElement('use', {"href":"#mgy_"+elementId, "y":minorTickPos[idx]});
-        py.append(usey);
+        addSvgEl(py, 'use', {"href":"#mgy_"+elementId, "y":minorTickPos[idx]});
         };
     };
     if(grid) {
-        appendSvgLine(py, 0, 1, plotArea[2],1, stroke="rgb(223,223,223)");
+        addSvgLn(py, 0, 1, plotArea[2],1, stroke="rgb(223,223,223)");
     };
-    appendSvgLine(py, 0, 1, tickLength,1);
-    appendSvgLine(py, plotArea[2] - tickLength, 1, plotArea[2], 1);
-    var pyr = createSVGElement("rect", {"x":0,"y":0,"width":plotArea[2],
+    addSvgLn(py, 0, 1, tickLength,1);
+    addSvgLn(py, plotArea[2] - tickLength, 1, plotArea[2], 1);
+    addSvgEl(svgDraw, "rect", {"x":0,"y":0,"width":plotArea[2],
         "height": plotArea[3],"fill": "url(#yTick_"+elementId+")"
     });
-    svgDraw.appendChild(pyr);
 
     // draw tick lines via pattern (in case we use custom ticks, this cant
     // be used anymore, see below's loop then for an alternative)
-    var defsgx = document.createElementNS(ns, "defs");
-    svgDraw.appendChild(defsgx);
+    var defsgx =  addSvgEl(svgDraw, "defs");
     if(minorGridX && nXMinorTicks > 0) {
-        var mgx = createSVGElement("g", { "id": "mgx_"+elementId});
+        var mgx = addSvgEl(defsgx, "g", { "id": "mgx_"+elementId});
         if(grid) {
-        appendSvgLine(mgx, 1, 0, 1, plotArea[3], stroke="rgb(223,223,223)", strokedasharray="2 4");
+        addSvgLn(mgx, 1, 0, 1, plotArea[3], stroke="rgb(223,223,223)", strokedasharray="2 4");
         };
-        appendSvgLine(mgx, 1, 0, 1, minorTickLength);
-        appendSvgLine(mgx, 1, plotArea[3] - minorTickLength, 1, plotArea[3]);
-        defsgx.appendChild(mgx);
+        addSvgLn(mgx, 1, 0, 1, minorTickLength);
+        addSvgLn(mgx, 1, plotArea[3] - minorTickLength, 1, plotArea[3]);
     };
 
-    var px = createSVGElement('pattern', {"id":"xTick_"+elementId, "x":xTickOffset-1, 
+    var px = addSvgEl(defsgx, "pattern", {"id":"xTick_"+elementId, "x":xTickOffset-1, 
         "y":0, "width": dXTick, "height": plotArea[3],
         "patternUnits": "userSpaceOnUse"
         });
-    defsgx.appendChild(px);
 
     if(minorGridX && nXMinorTicks > 0) {
         if(logXEnbl && xTick == 1) {
@@ -986,20 +957,18 @@ function plotSvg(elementId, x, y, numLines,
         minorTickPos = linspace(0, (1/nXMinorTicks)*dXTick, dXTick);
         };
         for(idx = 1; idx < minorTickPos.length-1; ++idx) {
-        var usex = createSVGElement('use', {"href":"#mgx_"+elementId, "x":minorTickPos[idx], "vector-effect":"non-scaling-stroke"});
-        px.append(usex);
+        addSvgEl(px, "use", {"href":"#mgx_"+elementId, "x":minorTickPos[idx], "vector-effect":"non-scaling-stroke"});
         };
     };
     if(grid) {
-        appendSvgLine(px, 1, 0, 1, plotArea[3], stroke="rgb(223,223,223)");
+        addSvgLn(px, 1, 0, 1, plotArea[3], stroke="rgb(223,223,223)");
     };
-    appendSvgLine(px, 1, 0, 1, tickLength);
-    appendSvgLine(px, 1, plotArea[3] - tickLength, 1, plotArea[3]);
+    addSvgLn(px, 1, 0, 1, tickLength);
+    addSvgLn(px, 1, plotArea[3] - tickLength, 1, plotArea[3]);
 
-    var pxr = createSVGElement("rect", {"x":0,"y":0,"width":plotArea[2],
+    addSvgEl(svgDraw, "rect", {"x":0,"y":0,"width":plotArea[2],
         "height": plotArea[3],"fill": "url(#xTick_"+elementId+")"
     });
-    svgDraw.appendChild(pxr);
 
 
     //////////////////////////////
@@ -1023,6 +992,7 @@ function plotSvg(elementId, x, y, numLines,
    
         var poly = document.createElementNS(ns, "polyline");
         //rect.setAttributeNS(null, 'class', "pl")
+        
         poly.setAttribute("class", "l");
         poly.setAttribute("id", "pl_" +elementId+"_"+lineIdx);
         poly.setAttribute("points", pointArray.join(" "));
@@ -1035,12 +1005,10 @@ function plotSvg(elementId, x, y, numLines,
     //////////////////////////////
     // create drawing area
     //////////////////////////////
-    var rect = createSVGElement("rect", {"x":0,"y":0,"width":plotArea[2],
+    addSvgEl(svgDraw, "rect", {"x":0,"y":0,"width":plotArea[2],
         "height": plotArea[3],"fill": "none","stroke":"black","stroke-width": 2,
         "vector-effect":"non-scaling-stroke"
     });
-    svgDraw.appendChild(rect);
-    svg.appendChild(svgDraw);
 
     // add legend last to be in front os drawing
     //svg.appendChild(gleg); 

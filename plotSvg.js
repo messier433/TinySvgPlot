@@ -356,7 +356,7 @@ function getNearestLine(x, y) {
 
 function plotSvg(elementId, x, y, numLines, 
 {title = "", subtitle = "", xlabel = "", ylabel="", xlim=[], ylim=[], 
-    legend = [], xScale = "linear", yScale = "linear", grid = true, 
+    legend = [], xScale = "lin", yScale = "lin", grid = true, 
     gridMinor = [], legendLocation = 'northeastoutside'
 }={}
 )
@@ -769,7 +769,7 @@ function plotSvg(elementId, x, y, numLines,
     nXTicks = Math.round((xMaxTick-xMinTick)/xTick); // rounding should not be required, just put in case of small numerical errors
     nYTicks = Math.round((yMaxTick-yMinTick)/yTick); // rounding should not be required, just put in case of small numerical errors
 
-    var tickLength = (pltAr[2] > pltAr[3]) ? pltAr[2] / 100 : pltAr[3] / 100;
+    var tickLength = 1;
     var minorTickLength = tickLength/2;
 
     if(logXEnbl) {
@@ -792,35 +792,9 @@ function plotSvg(elementId, x, y, numLines,
     dYTick = pltAr[3] * yTick/(yMax-yMin); 
     dYTickPct = 100 * yTick/(yMax-yMin); 
 
-    // axis labels
-    for(idx = 0; idx <= nYTicks; ++idx) {
-        var yTickPos =  - yTickOffsetPct + dYTickPct * idx;
-        var textEl = addSvgTxt(svgLeft, yTickLabel[nYTicks-idx], pltAr[0] - axesLblFontSize*0.5, yTickPos+"%", axesLblFontSize, "end");
-        textEl.setAttribute("dominant-baseline","central");
-    }
-    for(idx = 0; idx <= nXTicks; ++idx) {
-        var xTickPos = dXTickPct * idx + xTickOffsetPct;  
-        addSvgTxt(svgBottom, xTickLabel[idx], xTickPos+"%", axesLblFontSize*1.4, axesLblFontSize);
-    }
-
-    // draw tick lines via pattern (in case we use custom ticks, this cant
-    // be used anymore, see below's loop then for an alternative)
-    var defsgy = addSvgEl(svgDraw, "defs");    
-    if(minorGridY && nYMinorTicks > 0) {
-        var mgy = addSvgEl(defsgy, "g", { "id": "mgy_"+elementId});
-        if(grid) {
-        addSvgLn(mgy, 0, 1, pltAr[2],1, stroke="rgb(223,223,223)", strokedasharray="2 4");
-        };
-        addSvgLn(mgy, 0, 1, minorTickLength,1);
-        addSvgLn(mgy, pltAr[2] - minorTickLength, 1, pltAr[2], 1);
-        defsgy.appendChild(mgy);
-    };
-
-    var py = addSvgEl(defsgy, "pattern", {"id":"yTick_"+elementId, "x":0, 
-        "y":yTickOffset-1, "width": pltAr[2], "height": dYTick,
-        "patternUnits": "userSpaceOnUse"
-        });
-
+    // y axis labels and grid
+    var defsy =  addSvgEl(svgDraw, "defs");
+    var defsgy =  addSvgEl(defsy, "g", {"id": "mgy_"+elementId});
     if(minorGridY && nYMinorTicks > 0) {
         if(logYEnbl && yTick == 1) {
             minorTickPos = logspace(1, (9/(nYMinorTicks-1)), 10);
@@ -829,33 +803,23 @@ function plotSvg(elementId, x, y, numLines,
             minorTickPos = linspace(0, (1/nYMinorTicks)*dYTick, dYTick);
         };
         for(idx = 1; idx < minorTickPos.length-1; ++idx) {
-        addSvgEl(py, 'use', {"href":"#mgy_"+elementId, "y":minorTickPos[idx]});
+            addSvgLn(defsgy, 0, minorTickPos[idx], "100%", minorTickPos[idx], "rgb(223,223,223)", "2 4");
         };
     };
-    if(grid) {
-        addSvgLn(py, 0, 1, pltAr[2],1, stroke="rgb(223,223,223)");
-    };
-    addSvgLn(py, 0, 1, tickLength,1);
-    addSvgLn(py, pltAr[2] - tickLength, 1, pltAr[2], 1);
-    addSvgRec(svgDraw, 0, 0, pltAr[2], pltAr[3], "url(#yTick_"+elementId+")");
-
-    // draw tick lines via pattern (in case we use custom ticks, this cant
-    // be used anymore, see below's loop then for an alternative)
-    var defsgx =  addSvgEl(svgDraw, "defs");
-    if(minorGridX && nXMinorTicks > 0) {
-        var mgx = addSvgEl(defsgx, "g", { "id": "mgx_"+elementId});
-        if(grid) {
-        addSvgLn(mgx, 1, 0, 1, pltAr[3], stroke="rgb(223,223,223)", strokedasharray="2 4");
-        };
-        addSvgLn(mgx, 1, 0, 1, minorTickLength);
-        addSvgLn(mgx, 1, pltAr[3] - minorTickLength, 1, pltAr[3]);
-    };
-
-    var px = addSvgEl(defsgx, "pattern", {"id":"xTick_"+elementId, "x":xTickOffset-1, 
-        "y":0, "width": dXTick, "height": pltAr[3],
-        "patternUnits": "userSpaceOnUse"
-        });
-
+    if(grid) addSvgLn(defsgy, 0, 0, "100%", 0, "rgb(223,223,223)");
+    addSvgLn(defsgy, 0, 0, tickLength + "%", 0);
+    addSvgLn(defsgy, (100-tickLength) + "%", 0, "100%", 0);    
+       
+    for(idx = 0; idx <= nYTicks; ++idx) {
+        var yTickPosPct =  - yTickOffsetPct + dYTickPct * idx;
+        var yTickPos =  - yTickOffset + dYTick * idx;
+        var textEl = addSvgTxt(svgLeft, yTickLabel[nYTicks-idx], pltAr[0] - axesLblFontSize*0.5, yTickPosPct+"%", axesLblFontSize, "end");
+        textEl.setAttribute("dominant-baseline","central");
+        addSvgEl(svgDraw, "use", {"href":"#mgy_"+elementId, "y":yTickPos});
+    }
+    // x axis labels and grid
+    var defsx =  addSvgEl(svgDraw, "defs");
+    var defsgx =  addSvgEl(defsx, "g", {"id": "mgx_"+elementId});
     if(minorGridX && nXMinorTicks > 0) {
         if(logXEnbl && xTick == 1) {
             minorTickPos = logspace(1, (9/(nXMinorTicks-1)), 10);
@@ -864,15 +828,19 @@ function plotSvg(elementId, x, y, numLines,
             minorTickPos = linspace(0, (1/nXMinorTicks)*dXTick, dXTick);
         };
         for(idx = 1; idx < minorTickPos.length-1; ++idx) {
-        addSvgEl(px, "use", {"href":"#mgx_"+elementId, "x":minorTickPos[idx], "vector-effect":"non-scaling-stroke"});
+            addSvgLn(defsgx, minorTickPos[idx], 0, minorTickPos[idx], "100%", "rgb(223,223,223)", "2 4");
         };
     };
-    if(grid) {
-        addSvgLn(px, 1, 0, 1, pltAr[3], stroke="rgb(223,223,223)");
-    };
-    addSvgLn(px, 1, 0, 1, tickLength);
-    addSvgLn(px, 1, pltAr[3] - tickLength, 1, pltAr[3]);
-    addSvgRec(svgDraw, 0, 0, pltAr[2], pltAr[3], "url(#xTick_"+elementId+")");
+    if(grid) addSvgLn(defsgx, 0, 0, 0, "100%", "rgb(223,223,223)");
+    addSvgLn(defsgx, 0, 0, 0, tickLength + "%");
+    addSvgLn(defsgx, 0, (100-tickLength) + "%", 0, "100%");    
+    for(idx = 0; idx <= nXTicks; ++idx) {
+        var xTickPosPct = dXTickPct * idx + xTickOffsetPct;
+        var xTickPos = dXTick* idx + xTickOffset;  
+        addSvgTxt(svgBottom, xTickLabel[idx], xTickPosPct+"%", axesLblFontSize*1.4, axesLblFontSize);
+        addSvgEl(svgDraw, "use", {"href":"#mgx_"+elementId, "x":xTickPos});
+    }
+
 
     //////////////////////////////
     // create polylines

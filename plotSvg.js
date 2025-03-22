@@ -105,7 +105,7 @@ function addSvgRec(parent, x, y, width, height, fill="none", stroke="none", stro
     });  
 };
 
-function legClk(event, fontsize, ySpacing, elementId, numLines) {
+function legClicked(event, fontsize, ySpacing, elementId, numLines) {
     const svgLeg = getEl("svg_leg_"+elementId); //event.srcElement.ownerSVGElement;
     const legY = event.offsetY-svgLeg.y.baseVal.value; // x position inside plotting area
     var lnIdx = Math.floor((legY-ySpacing/2) / (fontsize+ySpacing));
@@ -210,11 +210,11 @@ function scrollLegend(event, elementId, hLegendItems){
 }
 
 function plotClicked(event, elementId, renderWidth, renderHeight, xmin, xmax, ymin, ymax, logx, logy) {
+
     svgDraw = getEl("svg_draw_"+elementId);
     svg = getEl("svg_"+elementId);
-    closestEl = getNearestLine(event.clientX, event.clientY)
-    if(closestEl == null)
-        return;
+
+
     //else
     var plotX = event.offsetX-svgDraw.x.baseVal.value; // x position inside plotting area
     var plotY = event.offsetY-svgDraw.y.baseVal.value; // x position inside plotting area
@@ -225,40 +225,15 @@ function plotClicked(event, elementId, renderWidth, renderHeight, xmin, xmax, ym
     const scaleY = renderHeight/plotH;
     plotX *= scaleX;
     plotY *= scaleY;
+    const detX = 6 * scaleX;
+    const detY = 6 * scaleY;
+    result = getNearestLine(elementId, plotX, plotY, detX, detY);
+    closestEl = result.ele;
+    if(closestEl == null)
+        return;
 
-    // search closest points on line
-    const points = closestEl.points;
-    var closestIdx = (plotX > points[points.length-1].x) ? points.length-1 : 0;
-    for(idx = 1; idx < points.length; ++idx ) {
-        const ptX = points[idx].x;
-        const ptY = points[idx].y;
-        if(points[idx].x >= plotX && points[idx-1].x <= plotX) {
-            closestIdx = idx-1;
-            break;
-        }
-    }
-
-    var nextIdx = closestIdx +1;
-    nextIdx = (nextIdx >= points.length) ? points.length-1 : nextIdx;
-
-    const snapDist = 6*6; // snap to exact point if clicked within distance
-    var idx = (plotX - points[closestIdx].x) > (points[nextIdx].x-plotX) ? nextIdx : closestIdx;
-    const dist = (points[idx].x-plotX)*(points[idx].x-plotX) + (points[idx].y-plotY)*(points[idx].y-plotY);
-    nextIdx = (dist < snapDist) ? idx : nextIdx;
-    closestIdx = (dist < snapDist) ? idx : closestIdx;
-
-    // interpolate between the 2 points
-    const spanX = points[closestIdx].x - points[nextIdx].x;
-    const spanY = points[closestIdx].y - points[nextIdx].y;
-    const span = spanX*spanX+spanY*spanY;
-    const dx = (points[closestIdx].x - plotX);// / spanX;
-    const dy = (points[closestIdx].y - plotY);// / spanY;
-    var d = dx * (spanX/span) + dy * (spanY/span)
-    if(nextIdx == closestIdx)
-        d = 1;
-
-    const intX = points[nextIdx].x * d + points[closestIdx].x * (1-d);
-    const intY = points[nextIdx].y * d + points[closestIdx].y * (1-d);
+    const intX = result.x;
+    const intY = result.y;
     const topX = intX/scaleX + svgDraw.x.baseVal.value;
     const topY = intY/scaleY + svgDraw.y.baseVal.value;
 
@@ -308,18 +283,24 @@ function plotMouseDown(event, elementId) {
 
     var rect = addSvgRec(svg, event.offsetX, event.offsetY, 0, 0, "black");
     addSvgEl(null, rect, {"id":"zoom_rect"+elementId, "fill-opacity":"0.3"});
-    svg.onmousemove = (eventNew) => plotZoom(eventNew, elementId);
+    svg.onmousemove = (eventNew) => plotDrawZoom(eventNew, elementId);
+    svg.onmouseup = (eventNew) => plotZoom(eventNew, elementId);
+}
+
+function plotDrawZoom(event, elementId) {
+    rectZoom = getEl("zoom_rect"+elementId);
+    rectZoom.width.baseVal.value = event.offsetX - rectZoom.x.baseVal.value;
+    rectZoom.height.baseVal.value = event.offsetY - rectZoom.y.baseVal.value;
 }
 
 function plotZoom(event, elementId) {
     rectZoom = getEl("zoom_rect"+elementId);
-    rectZoom.width.baseVal.value = event.offsetX - rectZoom.x.baseVal.value;
-    rectZoom.height.baseVal.value = event.offsetY - rectZoom.y.baseVal.value;
-    if(event.buttons != 2) {
-        rectZoom.remove();
-        svg = getEl("svg_"+elementId);
-        svg.onmousemove = null;
-    }
+    //rectZoom.width.baseVal.value = event.offsetX - rectZoom.x.baseVal.value;
+    //rectZoom.height.baseVal.value = event.offsetY - rectZoom.y.baseVal.value;
+    rectZoom.remove();
+    svg = getEl("svg_"+elementId);
+    svg.onmousemove = null;
+    svg.onmouseup = null;
 }
 
 function convertCoord(point, plotW, plotH, xlim, ylim, logx, logy) {
@@ -333,25 +314,70 @@ function convertCoord(point, plotW, plotH, xlim, ylim, logx, logy) {
 }
 
 // find a nearest line within 'proximity'
-function getNearestLine(x, y) {
-    const proximity = 4;
-
+function getNearestLine(elementId, Cx, Cy, dx, dy) {
     var closestEl = null;
     var closestDist = Infinity;
-    // move along each axis and see if we land on a line
-    for (let curX = x-proximity; curX <= x+proximity; curX++) {
-        for (let curY = y-proximity; curY <= y+proximity; curY++) {
-        const element = document.elementFromPoint(curX, curY);
-        if (element?.tagName == 'polyline') {
-            const dist = (curX - x)*(curX - x) + (curY - y)*(curY - y);
-            if(dist < closestDist) {
+
+    const polylines = getEl("gp_"+elementId);
+    const nLines = polylines.children.length;
+    var closestXproj = 0;
+    var closestYproj = 0;
+    for(idx = 0; idx < nLines; ++idx) {
+        const pts = polylines.children[idx].points;
+        for(idxPt = 1; idxPt < pts.length;++idxPt) {
+            const ptA = pts[idxPt-1];
+            const ptB = pts[idxPt];
+
+            // check if point is in rectangle
+            if(((Cx < (ptA.x-dx)) && (Cx < (ptB.x-dx))) || ((Cx > (ptA.x+dx)) && (Cx > (ptB.x+dx))) || 
+               ((Cy < (ptA.y-dy)) && (Cy < (ptB.y-dy))) || ((Cy > (ptA.y+dy)) && (Cy > (ptB.y+dy))))
+               continue;
+            
+            const ptBAx = (ptB.x- ptA.x);
+            const ptBAy = (ptB.y- ptA.y);
+            const swap = (ptBAx*ptBAx > ptBAy*ptBAy);
+            const slope = (swap) ? ptBAy/ptBAx : ptBAx/ptBAy;
+            const sign = 2*(slope >= 0) - 1;
+            const pt1x = Cx + dx - ptA.x;
+            const pt1y = Cy - dy*sign - ptA.y;
+            const pt2x = Cx - dx - ptA.x;
+            const pt2y = Cy + dy*sign - ptA.y;
+            const slope1 = (swap) ? pt1y / pt1x : pt1x / pt1y;
+            const slope2 = (swap) ? pt2y / pt2x : pt2x / pt2y;
+            if( ((slope1 < slope) && (slope2 < slope)) || ((slope1 > slope) && (slope2 > slope)))
+                continue;
+
+            // project point onto line
+            const ptCAx = Cx - ptA.x;
+            const ptCAy = Cy - ptA.y;
+            const coeff = (ptBAx*ptCAx + ptBAy*ptCAy) / (ptBAx*ptBAx+ptBAy*ptBAy);
+            const xproj = ptA.x + ptBAx * coeff;
+            const yproj = ptA.y + ptBAy * coeff;
+            const dist = (xproj-Cx)*(xproj-Cx) + (yproj-Cy)*(yproj-Cy);
+
+            if(dist < (dx*dy) && dist < closestDist) {
                 closestDist = dist;
-                closestEl = element;
-            };
+                closestEl = polylines.children[idx];
+                const dCAx = (Cx > ptA.x) ? Cx - ptA.x : ptA.x - Cx;
+                const dCAy = (Cy > ptA.y) ? Cy - ptA.y : ptA.y - Cy;
+                const dCBx = (Cx > ptB.x) ? Cx - ptB.x : ptB.x - Cx;
+                const dCBy = (Cy > ptB.y) ? Cy - ptB.y : ptB.y - Cy;
+                // snap to point
+                if((dCAx < dCBx) && (dCAx < dx) && (dCAy < dy) ) {
+                    closestXproj = ptA.x;
+                    closestYproj = ptA.y;
+                } else if((dCBx < dx) && (dCBy < dy) ) {
+                    closestXproj = ptB.x;
+                    closestYproj = ptB.y;
+                } else {
+                    closestXproj = xproj;
+                    closestYproj = yproj;
+                }
+            };            
         };
-      };
     };
-    return closestEl;
+    
+    return {"ele": closestEl, "x":closestXproj, "y":closestYproj};
   }
 
 function plotSvg(elementId, x, y, numLines, 
@@ -419,10 +445,9 @@ function plotSvg(elementId, x, y, numLines,
     var el = getEl(elementId);
     var mainDiv = document.createElement("div");
     el.appendChild(mainDiv);
-    //mainDiv.setAttribute( "style", "width:100%;height:100vh;overflow:auto");   
-    mainDiv.setAttribute( "style", "width:100%;height:calc(100vh - 16px);overflow:none");    
-    //var svg = addSvgEl("svg", {"preserveAspectRatio":"xMinYMin meet",
-    //    "viewBox":"0 0 " + width + " " + height});
+    //mainDiv.setAttribute( "style", "width:100%;height:calc(100vh - 4px);overflow:none");  
+    mainDiv.setAttribute( "style", "width:100%;height:100%;overflow:none");   
+
     var svg = addSvgEl(mainDiv, "svg", {"id":"svg_"+elementId, "width":"100%", "height":"100%"});
     var width=svg.width.baseVal.value;
     var height=svg.height.baseVal.value; 
@@ -479,8 +504,8 @@ function plotSvg(elementId, x, y, numLines,
     //////////////////////////////////////
     // create group
     var gleg = addSvgEl(null, "g", {"pointer-events":"visible"});
-    gleg.onclick = (event) => legClk(event, hLetter, legendYSpacing, elementId, 0);
-    gleg.ondblclick = (event) => legClk(event, hLetter, legendYSpacing, elementId, numLines);
+    gleg.onclick = (event) => legClicked(event, hLetter, legendYSpacing, elementId, 0);
+    gleg.ondblclick = (event) => legClicked(event, hLetter, legendYSpacing, elementId, numLines);
    
     var hLegendMargin = 0;
     if(legend.length>0 && numLines > 0 && x.length > 0) {  
@@ -567,8 +592,8 @@ function plotSvg(elementId, x, y, numLines,
                 break;
             case 'northeastoutside':
                 //xLegend = pltArXOffset + plotWidth - wLegend;
-                xLegend = -wLegend
-                plotWidth -= wLegend + legendXSpacing;
+                xLegend = -wLegend - legendXSpacing;
+                plotWidth -= wLegend + 2*legendXSpacing;
                 break;
             default:
                 throw new Error("LegendLocation not supported");
@@ -850,6 +875,7 @@ function plotSvg(elementId, x, y, numLines,
     if(!varX && (numPtPerLine != x.length))
         throw new Error("Dimension must agree");
 
+    var gp = addSvgEl(svgDraw, "g", {"id":"gp_"+elementId});
     for(lnIdx = 0; lnIdx < numLines; ++lnIdx) {
         var xLen = x.length;
         var pointArray = new Array(xLen*2);
@@ -872,13 +898,14 @@ function plotSvg(elementId, x, y, numLines,
             }
         };                
         
-        svgDraw.appendChild(poly);
+        gp.appendChild(poly);
     };
 
     //////////////////////////////
     // create drawing area
     //////////////////////////////
-    addSvgRec(svgDraw, 0, 0, pltAr[2], pltAr[3], "none", "black");
+    var plRec = addSvgRec(svgDraw, 0, 0, pltAr[2], pltAr[3], "none", "black");
+    plRec.setAttribute("pointer-events", "visible");
 
     // add legend last to be in front os drawing
     //svg.appendChild(gleg); 

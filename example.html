@@ -1,24 +1,34 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>plot testy</title>
+<title>plot test</title>
 </head>
-<body>
-    <div id="drawing1"></div>
+<body style="margin: 0px;padding:0px">
+  
+    <div id="drawing1" style="height:calc(100vh - 16px)"></div>
     <div id="drawing2"></div>
     <div id="drawing3"></div>
 
   <script src="plotSvg.js"></script>
   <script>
+  function linspace(start, increment, stop) {
+      numel = Math.floor((stop-start)/increment)+1;
+      out = Array(numel);
 
-  const optParam = {title:"test\ntest2", 
+      for(idx=0; idx < numel; ++idx){
+          out[idx] = start + increment*idx;
+      };
+      return out;
+  };
+
+  const optParam = {title:"test", 
                     subtitle:"test1",
                     xlabel: "xlabel",
                     ylabel: "ylabel",
                     xScale: "log",
-                    yScale: "linear",
+                    yScale: "lin",
                     xlim: [1,100],
-                    legend: linspace(1,1, 30), //["test1", "test2"]
+                    legend: linspace(1000000000,1, 1000000030), //["test1", "test2"]
                     legendLocation: "northeastoutside"
                     //legendLocation: "northeast"
                     };
@@ -26,8 +36,10 @@
   numLines =10;
    x = linspace(1,10, 400);
    y = Array.from(Array(x.length*numLines), () => Math.random());
+   //y = Array.from(Array(x.length*numLines), () => 1);
    y1 = Array.from(Array(x.length*numLines), () => Math.random());
    y2 = Array.from(Array(x.length*numLines), () => Math.random());
+ 
    //x = [0,100, 200];
    //y = [0,100, 300, 100,200, 300];
    plotSvg("drawing1", x, y, numLines, optParam);

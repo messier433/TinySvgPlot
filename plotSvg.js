@@ -105,20 +105,26 @@ function addSvgRec(parent, x, y, width, height, fill="none", stroke="none", stro
     });  
 };
 
-function tglLn(elementId, lnIdx, numLines) {
-    var style = getEl("pl_"+elementId+"_"+lnIdx).style.display;
-    
+function legClk(event, fontsize, ySpacing, elementId, numLines) {
+    const svgLeg = getEl("svg_leg_"+elementId); //event.srcElement.ownerSVGElement;
+    const legY = event.offsetY-svgLeg.y.baseVal.value; // x position inside plotting area
+    var lnIdx = Math.floor((legY-ySpacing/2) / (fontsize+ySpacing));
+    const clkLn = getEl("pl_"+elementId+"_"+lnIdx);
+    if(clkLn == null)
+        return;
+    const style = clkLn.style.display;
+
+
+    // else
     if(numLines == 0) {
         const tooltips = getEl("gpl_" +elementId+"_"+lnIdx); // tooltip group
         if (style === "none") {
             getEl("pl_"+elementId+"_"+lnIdx).style.display = "block";
-            getEl("lli_"+elementId+"_"+lnIdx).style.opacity = 1;
-            getEl("lti_"+elementId+"_"+lnIdx).style.opacity = 1;
+            getEl("lgi_"+elementId+"_"+lnIdx).style.opacity = 1;
             if(tooltips!=null) tooltips.style.display = "block";
         } else {        
             getEl("pl_"+elementId+"_"+lnIdx).style.display = "none";
-            getEl("lli_"+elementId+"_"+lnIdx).style.opacity = 0.3;
-            getEl("lti_"+elementId+"_"+lnIdx).style.opacity = 0.3;
+            getEl("lgi_"+elementId+"_"+lnIdx).style.opacity = 0.3;
             if(tooltips!=null) tooltips.style.display = "none";
         };
     } else {
@@ -126,23 +132,23 @@ function tglLn(elementId, lnIdx, numLines) {
             const tooltips = getEl("gpl_" +elementId+"_"+idx); // tooltip group        
             if (style === "none") { // make all visible again
                 getEl("pl_"+elementId+"_"+idx).style.display = "block";
-                getEl("lli_"+elementId+"_"+idx).style.opacity = 1;
-                getEl("lti_"+elementId+"_"+idx).style.opacity = 1;
+                getEl("lgi_"+elementId+"_"+idx).style.opacity = 1;
                 if(tooltips!=null) tooltips.style.display = "block";
             } else  if(idx != lnIdx) { // only keep selected one visible
                 getEl("pl_"+elementId+"_"+idx).style.display = "none";
-                getEl("lli_"+elementId+"_"+idx).style.opacity = 0.3;
-                getEl("lti_"+elementId+"_"+idx).style.opacity = 0.3;
+                getEl("lgi_"+elementId+"_"+idx).style.opacity = 0.3;
                 if(tooltips!=null) tooltips.style.display = "none";
             };
         };
     };
-};
-
+}
 
 function resizeSvg(elementId, padX, padY, hLegendItems, hLegendMargin) {
     var svgLeg = getEl("svg_leg_"+elementId);
     var svgDraw = getEl("svg_draw_"+elementId);
+    var svgTop = getEl("svg_top_"+elementId);
+    var svgBottom = getEl("svg_bottom_"+elementId);
+    var svgLeft = getEl("svg_left_"+elementId);
     var svg = getEl("svg_"+elementId);
     
     const parentWidth = svg.width.baseVal.value;
@@ -152,10 +158,14 @@ function resizeSvg(elementId, padX, padY, hLegendItems, hLegendMargin) {
     const oldChildWidth = svgDraw.width.baseVal.value;
     const oldChildHeight = svgDraw.height.baseVal.value;
     
+ 
     tooltips = document.getElementsByClassName("tooltip");
 
     if(oldChildWidth != newChildWidth) {
         svgDraw.width.baseVal.value = newChildWidth;    
+        svgTop.width.baseVal.value = newChildWidth;    
+        svgBottom.width.baseVal.value = newChildWidth; 
+        svgLeg.x.baseVal.value += newChildWidth - oldChildWidth;  
         // update tooltip location which refers to top SVG and not scaled with drawing SVG
         for(idx = 0; idx<tooltips.length; ++idx) {
             const offsetX = svgDraw.x.baseVal.value;
@@ -166,6 +176,7 @@ function resizeSvg(elementId, padX, padY, hLegendItems, hLegendMargin) {
     }
     if(oldChildHeight != newChildHeight) {
         svgDraw.height.baseVal.value= newChildHeight;
+        svgLeft.height.baseVal.value = newChildHeight; 
         if(svgLeg!=null) {
             var newLegHeight = newChildHeight -hLegendMargin;
             newLegHeight = (newLegHeight > hLegendItems) ? hLegendItems : newLegHeight;
@@ -301,7 +312,6 @@ function plotMouseDown(event, elementId) {
 }
 
 function plotZoom(event, elementId) {
-    //console.log(event)
     rectZoom = getEl("zoom_rect"+elementId);
     rectZoom.width.baseVal.value = event.offsetX - rectZoom.x.baseVal.value;
     rectZoom.height.baseVal.value = event.offsetY - rectZoom.y.baseVal.value;
@@ -419,7 +429,6 @@ function plotSvg(elementId, x, y, numLines,
 	width = (width < 1200) ? 1200 : width; // too small values can cause errors (negative dimensions)
 	height = (height < 800) ? 800 : height; // too small values can cause errors (negative dimensions)
     
-
     // write styles
     svg.innerHTML += "\<style\>\n" +
         "\<![CDATA[\n" + 
@@ -431,12 +440,11 @@ function plotSvg(elementId, x, y, numLines,
         "  text.cll {\n" + 
         "    font-size:"+legendFontSize+"px;\n" + 
         "    fill:black;\n" + 
-        "    dominant-baseline:middle;\n" + 
+        "    dominant-baseline:central;\n" + 
         "    font-family:"+legendFont+";\n" + 
         "  }\n" + 
         "]]\>\n" + 
         "\</style\>\n";
-
 
     var pltArYOffset = 0;
     var pltArXOffset = xAxesSpacing;
@@ -470,7 +478,10 @@ function plotSvg(elementId, x, y, numLines,
     // create legend
     //////////////////////////////////////
     // create group
-    var gleg = addSvgEl(null, "g");
+    var gleg = addSvgEl(null, "g", {"pointer-events":"visible"});
+    gleg.onclick = (event) => legClk(event, hLetter, legendYSpacing, elementId, 0);
+    gleg.ondblclick = (event) => legClk(event, hLetter, legendYSpacing, elementId, numLines);
+   
     var hLegendMargin = 0;
     if(legend.length>0 && numLines > 0 && x.length > 0) {  
         // set legend dimensions depending on location
@@ -512,7 +523,6 @@ function plotSvg(elementId, x, y, numLines,
             
         var hLegendItems = nLegend * (hLetter + legendYSpacing) + legendYSpacing;
         var hLegend = (hLegendItems > hLegendMax) ? hLegendMax : hLegendItems;
-        var legendTrunc = 0;
        
         addSvgEl(null, svgLeg, {"x": "100%", "height": hLegend});       
     
@@ -524,10 +534,7 @@ function plotSvg(elementId, x, y, numLines,
             colorIdx = lnIdx % colorMapRGB.length;
             yOffset = lnIdx * (hLetter + legendYSpacing) +  legendYSpacing;
     
-            var legItemGroup = new addSvgEl(svgLeg, "g", {"id": "lgi_"+elementId+"_"+lnIdx,
-                "onclick": "tglLn(\"" +  elementId +"\", " + lnIdx +", 0);",
-                "ondblclick": "tglLn(\"" +  elementId +"\", " + lnIdx +", "+numLines+");"
-            });
+            var legItemGroup = new addSvgEl(svgLeg, "g", {"id": "lgi_"+elementId+"_"+lnIdx});
 
             // legend lines
             addSvgEl(legItemGroup, "use", {"id": "lli_"+elementId+"_"+lnIdx, "x":legendXSpacing, "y":yOffset+hLetter/2,
@@ -536,12 +543,11 @@ function plotSvg(elementId, x, y, numLines,
             // legend labels
             var textEl = addSvgEl(legItemGroup, "text", {"id": "lti_"+elementId+"_"+lnIdx, "class":"cll", 
                 "x":legendXSpacing+legendLineLength+legendXSpacing, "y":yOffset+hLetter/2});
+            var str = "";
             if(lnIdx < legendTmp.length) {
-                textEl.append(document.createTextNode(legendTmp[lnIdx]));  
-            }  else {
-                textEl.append(document.createTextNode("")); 
-            }
-            
+                str = legendTmp[lnIdx];
+            };
+            textEl.append(document.createTextNode(str));  
         }
 
         var bbox = gleg.getBBox();
@@ -550,18 +556,6 @@ function plotSvg(elementId, x, y, numLines,
         // update width of legend rectangle and clip box
         recleg.setAttribute("width","100%");
         svgLeg.setAttribute("width",wLegend);
-    
-        // create bouding box for mouse clicks on legend items
-        for(lnIdx = 0; lnIdx < nLegend; ++lnIdx) {
-            colorIdx = lnIdx % colorMapRGB.length;
-            yOffset = lnIdx * (hLetter + legendYSpacing) +  legendYSpacing;
-    
-            const legItemGroup = getEl( "lgi_"+elementId+"_"+lnIdx);
-
-            // create rectangle to capture mouse event
-            var recleg = addSvgRec(legItemGroup, legendXSpacing, yOffset, wLegend, hLetter + legendYSpacing);
-            addSvgEl(null, recleg, {"id": "lri_"+elementId+"_"+lnIdx, "pointer-events":"visible"});
-        }
 
         var xLegend = 0;
         // update plot and legend dimensions depending on legend position
@@ -581,8 +575,7 @@ function plotSvg(elementId, x, y, numLines,
         }
 
         // move legend to final location   
-        //gleg.setAttribute( "transform", "translate(" + xLegend +  " " + yLegend + ")");
-        addSvgEl(null, svgLeg, {"x": "calc(100% + " + xLegend + "px)", "y": yLegend, "viewBox": "0 0 " + wLegend + " " + hLegend});
+        addSvgEl(null, svgLeg, {"x": svg.width.baseVal.value + xLegend, "y": yLegend, "viewBox": "0 0 " + wLegend + " " + hLegend});
     }   else {
         plotWidth -= xAxesSpacing;
     }
@@ -592,7 +585,7 @@ function plotSvg(elementId, x, y, numLines,
     ///////////////////////////////
     // add title
     ///////////////////////////////
-    var svgTop= addSvgEl(svg, "svg", {"x": pltAr[0], "overflow":"visible", "width":"calc(100% - "+padding[0]+"px)"});
+    var svgTop= addSvgEl(svg, "svg", {"id":"svg_top_"+elementId, "x": pltAr[0], "overflow":"visible", "width":svg.width.baseVal.value-padding[0]});
     var titleYOffset = 0;
     if(title.length>0) {
         for(idx = 0; idx < titleLines.length; ++idx) {
@@ -615,7 +608,7 @@ function plotSvg(elementId, x, y, numLines,
     ///////////////////////////////
     var gBottomShift = -height + pltAr[1] + pltAr[3];
     var gBottom = addSvgEl(svg, "g", {"transform":"translate(" + pltAr[0]  + " " + gBottomShift + ")"});
-    var svgBottom = addSvgEl(gBottom, "svg", {"overflow":"visible","y":"100%", "width":"calc(100% - "+padding[0]+"px)"});
+    var svgBottom = addSvgEl(gBottom, "svg", {"id":"svg_bottom_"+elementId, "overflow":"visible","y":"100%", "width":svg.width.baseVal.value-padding[0]});
     if(xlabel.length>0) {
         //addSvgTxt(svg, xlabel,"50%", pltAr[1] + pltAr[3] + axesLblFontSize*2.4 + fontSpacing, axesLblFontSize);
         addSvgTxt(svgBottom, xlabel,"50%", axesLblFontSize*3, axesLblFontSize);
@@ -624,7 +617,7 @@ function plotSvg(elementId, x, y, numLines,
     ///////////////////////////////
     // draw ylabel
     ///////////////////////////////
-    var svgLeft= addSvgEl(svg, "svg", {"y": pltAr[1], "overflow":"visible", "height":"calc(100% - "+padding[1]+"px)"});
+    var svgLeft= addSvgEl(svg, "svg", {"id":"svg_left_"+elementId, "y": pltAr[1], "overflow":"visible", "height":svg.height.baseVal.value-padding[1]});
     if(ylabel.length>0) { 
         var text = addSvgEl(svgLeft, "text", {"writing-mode":"sideways-lr", 
         "fill":"black", "font-size":axesLblFontSize, "text-anchor":"middle", 
@@ -645,10 +638,7 @@ function plotSvg(elementId, x, y, numLines,
     if(xlim.length < 2) {
         xMin = getMin(x);
         xMax = getMax(x);
-        if(xMin == NaN) {
-        xMin = 0;
-        xMax = 1;
-        };
+
         if(xMin == xMax) {
         xMin = xMin - 0.5;
         xMax = xMax + 0.5;
@@ -661,10 +651,6 @@ function plotSvg(elementId, x, y, numLines,
         yMin = getMin(y);
         yMax = getMax(y);
 
-        if(yMin == NaN) {
-            yMin = 0;
-            yMax = 1;
-        };
         if(yMin == yMax) {
             yMin = yMin - 0.5;
             yMax = yMax + 0.5;
@@ -673,7 +659,6 @@ function plotSvg(elementId, x, y, numLines,
         yMin = ylim[0];
         yMax = ylim[1];
     }
-
 
     //////////////////////////////
     // create clip path for plotting area
@@ -701,12 +686,10 @@ function plotSvg(elementId, x, y, numLines,
             minorGridY = gridMinor[1];
         else
             minorGridY = gridMinor[1];
-    }  
-        
+    }          
 
     var xTick = (xMax-xMin)/nXTicks;
 		
-
     // round to next decade
     var exponent = Math.floor(Math.log10(xTick));
     var mantissa = Math.ceil(xTick/Math.pow(10,exponent));
@@ -782,7 +765,6 @@ function plotSvg(elementId, x, y, numLines,
     var xTickOffsetPct = 100 * (xMinTick - xMin)/(xMax-xMin);
     var yTickOffsetPct = 100 * (yMaxTick - yMax)/(yMax-yMin);
 
-
     // actual number of ticks
     nXTicks = Math.round((xMaxTick-xMinTick)/xTick); // rounding should not be required, just put in case of small numerical errors
     nYTicks = Math.round((yMaxTick-yMinTick)/yTick); // rounding should not be required, just put in case of small numerical errors
@@ -790,14 +772,11 @@ function plotSvg(elementId, x, y, numLines,
     var tickLength = (pltAr[2] > pltAr[3]) ? pltAr[2] / 100 : pltAr[3] / 100;
     var minorTickLength = tickLength/2;
 
-
-
     if(logXEnbl) {
         xTickLabel = num2eng(decades(xMinTick,xTick,xMaxTick));
     } else {
         xTickLabel = num2eng(linspace(xMinTick,xTick,xMaxTick));
     };
-
 
     if(logYEnbl) {
         yTickLabel = num2eng(decades(yMinTick,yTick,yMaxTick));
@@ -817,7 +796,7 @@ function plotSvg(elementId, x, y, numLines,
     for(idx = 0; idx <= nYTicks; ++idx) {
         var yTickPos =  - yTickOffsetPct + dYTickPct * idx;
         var textEl = addSvgTxt(svgLeft, yTickLabel[nYTicks-idx], pltAr[0] - axesLblFontSize*0.5, yTickPos+"%", axesLblFontSize, "end");
-        textEl.setAttribute("alignment-baseline","middle");
+        textEl.setAttribute("dominant-baseline","central");
     }
     for(idx = 0; idx <= nXTicks; ++idx) {
         var xTickPos = dXTickPct * idx + xTickOffsetPct;  
@@ -943,8 +922,6 @@ function plotSvg(elementId, x, y, numLines,
     svg.oncontextmenu = (event) => {event.preventDefault()}; // prevent context menu during zoom
     svgDraw.onmousedown = (event) => plotMouseDown(event, elementId);
     svg.onmousedown = (event) => {event.preventDefault()}; // prevent context menu during zoom
-    
-    //svgDraw.setAttribute("onclick","console.log('test')");
 
     if(legend.length > 0)
         gleg.onwheel = (event) => scrollLegend(event, elementId, hLegendItems)

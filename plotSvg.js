@@ -279,20 +279,20 @@ function plotClicked(event, elementId, renderWidth, renderHeight, xmin, xmax, ym
     
     tooltip.onclick = (event) => {if(event.srcElement.parentNode.tagName == "g") event.srcElement.parentNode.remove()};
    
-    const rect = addSvgRec(tooltip, 5, -9, 0, 0, lineColor, "rgb(223,223,223)", 1, rx=4);
+    const rect = addSvgRec(tooltip, 5, -9, 0, 32, lineColor, "rgb(223,223,223)", 1, rx=4);
 	var line = null;
     if(legendItem != null) {
         text = addSvgTxt(tooltip, legendItem.textContent, 7, -11, 12, "start", "Sans,Arial", "white" ); 
         addSvgEl(null, text, {"font-weight":"bold"});
         line = addSvgLn(tooltip, 5, -8, 5,-8, stroke="white");
-		rect.setAttribute("y",-23);
+		addSvgEl(null, rect, {"y":-23, "height":46});
     }
 
     addSvgTxt(tooltip, "x: " + num2eng([sourceCoord[0]]), 7, 4, 12, "start", "Sans,Arial", "white");
     addSvgTxt(tooltip, "y: " + num2eng([sourceCoord[1]]), 7, 18, 12, "start", "Sans,Arial", "white");    
             
     var bbox = tooltip.getBBox();
-    addSvgEl(null, rect, {"width": bbox.width+4, "height": bbox.height+4});
+    addSvgEl(null, rect, {"width": bbox.width+4});
     if(line != null)
         line.setAttribute("x2", bbox.width+4+5);
 

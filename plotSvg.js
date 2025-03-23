@@ -719,26 +719,23 @@ function plotSvg(elementId, x, y, numLines,
         return number >= mantissa;
     });
     var xTick = normTicks[normTickIdx] * pow(10,exponent);
-    var nXMinorTicks = 0;
 
     if(logXEnbl) {
         if ((xMax-xMin) >= 1) { // keep 1 decade tick until there is at least 1 decade range
-        xTick = xTick < 1 ? 1 : xTick;
-        if(xTick > 1) {
-            // log sub ticks only used for 1 decade range, higher ranges change to lin sub ticks
-            // in that case each sub tick should be at least 1 decade
-            nXMinorTicks = (xTick > nXMinorTicks) ? nXMinorTicks : xTick;
-        }
+            xTick = xTick < 1 ? 1 : xTick;
+            if(xTick > 1) {
+                // log sub ticks only used for 1 decade range, higher ranges change to lin sub ticks
+                // in that case each sub tick should be at least 1 decade
+                nXMinorTicks = (xTick > nXMinorTicks) ? nXMinorTicks : xTick;
+            }
         } else {
-        nXMinorTicks = 0; // no sub ticks for less than 1 decade major tick range
+            nXMinorTicks = 0; // no sub ticks for less than 1 decade major tick range
         }
     } else {
         nXMinorTicks = 5; // 5 sub ticks for linear axes are cleaner than 10
     }
 	
-
     var yTick = (yMax-yMin)/nYTicks;
-    var nYMinorTicks = 0;
     // round to next decade
     exponent = floor(log10(yTick));
     mantissa = ceil(yTick/pow(10,exponent));

@@ -43,7 +43,10 @@ function setAttr(obj, field, val) {
 function getAttr(obj, field) {
     return obj.getAttribute(field);
 }
-
+function size(element) {
+    return [element.x.baseVal.value, element.y.baseVal.value, 
+            element.width.baseVal.value, element.height.baseVal.value];
+};
 function setLim(vals, lim) {
     if(lim.length < 2) {
         let len = vals.length;
@@ -141,7 +144,7 @@ function addSvgRec(parent, x, y, width, height, fill="none", stroke="none", stro
 
 function legClicked(event, fontsize, ySpacing, elementId, numLines) {
     const svgLeg = getEl("svg_leg_"+elementId); //event.srcElement.ownerSVGElement;
-    const legY = event.offsetY-getAttr(svgLeg, "y"); // x position inside plotting area
+    const legY = event.offsetY-getAttr(svgLeg, "y")+svgLeg.viewBox.baseVal.y; // x position inside plotting area
     const lnIdx = floor((legY-ySpacing/2) / (fontsize+ySpacing));
     const clkLn = getEl("pl_"+elementId+"_"+lnIdx);
     if(clkLn == null)
@@ -182,8 +185,9 @@ function updateMarkerPos(elementId) {
     const tooltips = document.getElementsByClassName("tooltip_" + elementId);
     // update tooltip location which refers to top SVG and not scaled with drawing SVG
     for(let idx = 0; idx<tooltips.length; ++idx) {
-        const scaleX = svgDraw.viewBox.baseVal.width/svgDraw.width.baseVal.value;;
-        const scaleY = svgDraw.viewBox.baseVal.height/svgDraw.height.baseVal.value;;
+        const svgSz = size(svgDraw);
+        const scaleX = svgDraw.viewBox.baseVal.width/svgSz[2];
+        const scaleY = svgDraw.viewBox.baseVal.height/svgSz[3];
 
         tooltips[idx].transform.baseVal[1].matrix.a = scaleX; 
         tooltips[idx].transform.baseVal[1].matrix.d = scaleY; 
@@ -199,21 +203,19 @@ function resizeSvg(elementId, padX, padY, hLegendItems, hLegendMargin) {
     const svgLeft = getEl("svg_left_"+elementId);
     const svg = getEl("svg_"+elementId);
     
-    const parentWidth = svg.width.baseVal.value;
-    const parentHeight = svg.height.baseVal.value;
-    const newChildWidth = parentWidth-padX;
-    const newChildHeight = parentHeight-padY;
-    const oldChildWidth = svgDraw.width.baseVal.value;
-    const oldChildHeight = svgDraw.height.baseVal.value;
+    const parentSz = size(svg);
+    const childSz = size(svgDraw);
+    const newChildWidth = parentSz[2]-padX;
+    const newChildHeight = parentSz[3]-padY;
 
-    if(oldChildWidth != newChildWidth) {
+    if(childSz[2] != newChildWidth) {
         setAttr(svgDraw, "width", newChildWidth); 
         setAttr(svgBg, "width", newChildWidth);            
         setAttr(svgTop, "width", newChildWidth);    
         setAttr(svgBottom, "width", newChildWidth); 
-        if(svgLeg!=null) svgLeg.x.baseVal.value += newChildWidth - oldChildWidth;    
+        if(svgLeg!=null) svgLeg.x.baseVal.value += newChildWidth - childSz[2];    
     }
-    if(oldChildHeight != newChildHeight) {
+    if(childSz[3] != newChildHeight) {
         setAttr(svgDraw, "height",  newChildHeight);
         setAttr(svgBg, "height", newChildHeight);    
         setAttr(svgLeft, "height", newChildHeight); 
@@ -231,9 +233,10 @@ function resizeSvg(elementId, padX, padY, hLegendItems, hLegendMargin) {
 function scrollLegend(event, elementId, hLegendItems){
     const svgLeg = getEl("svg_leg_"+elementId);
     const rectLeg = getEl("rect_leg_"+elementId);
+    const legSz = size(svgLeg);
     svgLeg.viewBox.baseVal.y +=  event.deltaY;
     const minScroll = 0;
-    const maxScroll = hLegendItems - svgLeg.height.baseVal.value;
+    const maxScroll = hLegendItems - legSz[3];
 
     if(svgLeg.viewBox.baseVal.y < minScroll)
         svgLeg.viewBox.baseVal.y = minScroll;
@@ -250,18 +253,13 @@ function plotClicked(event, elementId, pltLim, grid, minorGrid, logScale) {
     //const svg = getEl("svg_"+elementId);
 
     //else
-    const drawX = svgDraw.x.baseVal.value;
-    const drawY = svgDraw.y.baseVal.value;
-    // rescale in case width changed after drawing
-    const plotW = svgDraw.width.baseVal.value;
-    const plotH = svgDraw.height.baseVal.value;
-
-    const scaleX = svgDraw.viewBox.baseVal.width/plotW;
-    const scaleY = svgDraw.viewBox.baseVal.height/plotH;
+    const drawSz = size(svgDraw);
+    const scaleX = svgDraw.viewBox.baseVal.width/drawSz[2];
+    const scaleY = svgDraw.viewBox.baseVal.height/drawSz[3];
     const vBx = svgDraw.viewBox.baseVal.x;
     const vBy = svgDraw.viewBox.baseVal.y;
-    const plotX = (event.offsetX-drawX) * scaleX + vBx; // x position inside plotting viewBox
-    const plotY = (event.offsetY-drawY) * scaleY + vBy; // y position inside plotting viewBox
+    const plotX = (event.offsetX-drawSz[0]) * scaleX + vBx; // x position inside plotting viewBox
+    const plotY = (event.offsetY-drawSz[1]) * scaleY + vBy; // y position inside plotting viewBox
     const dSnap = 6;
     const detX = dSnap * scaleX;
     const detY = dSnap * scaleY;
@@ -428,8 +426,7 @@ function plotZoom(elementId, rlim, grid, minorGrid, logScale) {
         return;
 
     const isPan = getAttr(rectZoom,"fill-opacity") == 0;
-    const rec = [rectZoom.x.baseVal.value, rectZoom.y.baseVal.value, 
-                 rectZoom.width.baseVal.value, rectZoom.height.baseVal.value];
+    const rec = size(rectZoom);
     rectZoom.remove();
     if(rec[2] == 0 || rec[3] == 0)
         return;
@@ -438,8 +435,7 @@ function plotZoom(elementId, rlim, grid, minorGrid, logScale) {
     const vb = [svgDraw.viewBox.baseVal.x, svgDraw.viewBox.baseVal.y, 
                 svgDraw.viewBox.baseVal.width, svgDraw.viewBox.baseVal.height];
 
-    const pltAr = [svgDraw.x.baseVal.value, svgDraw.y.baseVal.value, 
-                   svgDraw.width.baseVal.value, svgDraw.height.baseVal.value];
+    const pltAr = size(svgDraw);
     let recRel = [];
     if(isPan)
         recRel =  [-rec[2]/ pltAr[2], rec[3]/ pltAr[3], 1,1];
@@ -574,7 +570,7 @@ function createGrid(elementId, lim, grid, minorGrid, logScale){
             const tickPos =  tickOffset + dTick * idx; 
             let textEl = null;     
             if(axIdx > 0)                
-                textEl = addSvgTxt(svgAx, tickLabel[nTicks-idx], svgAx.width.baseVal.value - axesLblFontSize*0.5, tickPos+"%", axesLblFontSize, "end");
+                textEl = addSvgTxt(svgAx, tickLabel[nTicks-idx], size(svgAx)[2] - axesLblFontSize*0.5, tickPos+"%", axesLblFontSize, "end");
             else 
                 textEl = addSvgTxt(svgAx, tickLabel[idx], tickPos+"%", axesLblFontSize*0.9, axesLblFontSize);
 
@@ -635,11 +631,8 @@ function plotSvg(elementId, x, y, numLines,
         maxLegendWidth+"px;min-height:200px;overflow:none");   
 
     const svg = addSvgEl(mainDiv, "svg", {"id":"svg_"+elementId, "width":"100%", "height":"100%"});
-    const width=svg.width.baseVal.value;
-    const height=svg.height.baseVal.value;
-	//width = (width < 1200) ? 1200 : width; // too small values can cause errors (negative dimensions)
-	//height = (height < 800) ? 800 : height; // too small values can cause errors (negative dimensions)
-    
+    const svgSz = size(svg);
+
     // write styles
     svg.innerHTML += "\<style\>\n" +
         "\<![CDATA[\n" + 
@@ -673,8 +666,8 @@ function plotSvg(elementId, x, y, numLines,
 
     pltArYOffset = pltArYOffset + 10;
 
-    let plotHeight = height-pltArYOffset-yAxesSpacing;
-    let plotWidth = width-pltArXOffset;
+    let plotHeight = svgSz[3]-pltArYOffset-yAxesSpacing;
+    let plotWidth = svgSz[2]-pltArXOffset;
 
     // reserve space for labels
     if(xlabel.length>0) {
@@ -784,13 +777,13 @@ function plotSvg(elementId, x, y, numLines,
         }
 
         // move legend to final location   
-        addSvgEl(null, svgLeg, {"x": svg.width.baseVal.value + xLegend, "y": yLegend, "viewBox": "0 0 " + wLegend + " " + hLegend});
+        addSvgEl(null, svgLeg, {"x": svgSz[2] + xLegend, "y": yLegend, "viewBox": "0 0 " + wLegend + " " + hLegend});
     }   else {
         plotWidth -= xAxesSpacing;
     }
 
     const pltAr = [pltArXOffset, pltArYOffset, plotWidth, plotHeight];
-    let padding = [width-pltAr[2], height-pltAr[3]];
+    let padding = [svgSz[2]-pltAr[2], svgSz[3]-pltAr[3]];
     ///////////////////////////////
     // add title
     ///////////////////////////////
@@ -815,7 +808,7 @@ function plotSvg(elementId, x, y, numLines,
     ///////////////////////////////
     // draw xlabel
     ///////////////////////////////
-    let gBottomShift = -height + pltAr[1] + pltAr[3];
+    let gBottomShift = -svgSz[3] + pltAr[1] + pltAr[3];
     const gBottom = addSvgEl(svg, "g", {"transform":"translate(" + pltAr[0]  + " " + gBottomShift + ")"});
     const svgBottom = addSvgEl(gBottom, "svg", {"id":"svg_bottom_"+elementId, "overflow":"visible","y":"100%", "width":pltAr[2]});
     if(xlabel.length>0) {

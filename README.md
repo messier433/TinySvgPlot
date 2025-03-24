@@ -10,9 +10,9 @@ Supported interactions:
 - zoom-in via pressing right mouse button while defining zoom-in area
 - reset view via double left-click on plot area
 - left click marker placement and removal; linear interpolation on line and snap to exact points
-- Legend interaction
-  > Single-click on legend item: toggle visibility of selected element
-  > Double-click of legend item: if selected item is visible, hide all other items. If invisible, make all items visible
-  > Mouse wheel: Scroll legend in case items do not fit in vertical legend area
+- Legend interaction<br />
+  Single-click on legend item: toggle visibility of selected element<br />
+  Double-click of legend item: if selected item is visible, hide all other items. If invisible, make all items visible<br />
+  Mouse wheel: Scroll legend in case items do not fit in vertical legend area<br />
 - pan via middle mouse button 
 - download generated SVG (to be done)

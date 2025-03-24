@@ -12,7 +12,7 @@ const floor = Math.floor;
 const log10 = Math.log10;
 const ceil = Math.ceil;
 
-const zoomButton = 22; // 0 is left mouse button; 1: middle mouse button; 2: right mouse button (recommended)
+const zoomButton = 2; // 0 is left mouse button; 1: middle mouse button; 2: right mouse button (recommended)
 const panButton = 1; // 0 is left mouse button; 1: middle mouse button (recommended); 2: right mouse button
 const axesLblFontSize = 12;
 const legendFontSize = 10;
@@ -33,20 +33,24 @@ const colorMapRGB =  ["rgb(0,114,190)", "rgb(218,83,25)", "rgb(238,178,32)",
                     "rgb(126,47,142)", "rgb(119,173,48)", "rgb(77,191,239)",
                     "rgb(163,20,47)"];
 
-function getEl(id)
-{
+function getEl(id){
     return document.getElementById(id);
-}
+};
 function setAttr(obj, field, val) {
     obj.setAttribute(field, val);
-}
+};
 function getAttr(obj, field) {
     return obj.getAttribute(field);
-}
+};
 function size(element) {
     return [element.x.baseVal.value, element.y.baseVal.value, 
             element.width.baseVal.value, element.height.baseVal.value];
 };
+function view(element) {
+    return [element.viewBox.baseVal.x, element.viewBox.baseVal.y, 
+        element.viewBox.baseVal.width, element.viewBox.baseVal.height];
+};
+
 function setLim(vals, lim) {
     if(lim.length < 2) {
         let len = vals.length;
@@ -144,7 +148,7 @@ function addSvgRec(parent, x, y, width, height, fill="none", stroke="none", stro
 
 function legClicked(event, fontsize, ySpacing, elementId, numLines) {
     const svgLeg = getEl("svg_leg_"+elementId); //event.srcElement.ownerSVGElement;
-    const legY = event.offsetY-getAttr(svgLeg, "y")+svgLeg.viewBox.baseVal.y; // x position inside plotting area
+    const legY = event.offsetY-getAttr(svgLeg, "y")+view(svgLeg)[1]; // x position inside plotting area
     const lnIdx = floor((legY-ySpacing/2) / (fontsize+ySpacing));
     const clkLn = getEl("pl_"+elementId+"_"+lnIdx);
     if(clkLn == null)
@@ -186,8 +190,9 @@ function updateMarkerPos(elementId) {
     // update tooltip location which refers to top SVG and not scaled with drawing SVG
     for(let idx = 0; idx<tooltips.length; ++idx) {
         const svgSz = size(svgDraw);
-        const scaleX = svgDraw.viewBox.baseVal.width/svgSz[2];
-        const scaleY = svgDraw.viewBox.baseVal.height/svgSz[3];
+        const svgVw = view(svgDraw)
+        const scaleX = svgVw[2]/svgSz[2];
+        const scaleY = svgVw[3]/svgSz[3];
 
         tooltips[idx].transform.baseVal[1].matrix.a = scaleX; 
         tooltips[idx].transform.baseVal[1].matrix.d = scaleY; 
@@ -234,16 +239,18 @@ function scrollLegend(event, elementId, hLegendItems){
     const svgLeg = getEl("svg_leg_"+elementId);
     const rectLeg = getEl("rect_leg_"+elementId);
     const legSz = size(svgLeg);
-    svgLeg.viewBox.baseVal.y +=  event.deltaY;
+    const svgLegVw = view(svgLeg);   
     const minScroll = 0;
     const maxScroll = hLegendItems - legSz[3];
+    svgLegVw[1] +=  event.deltaY;
 
-    if(svgLeg.viewBox.baseVal.y < minScroll)
-        svgLeg.viewBox.baseVal.y = minScroll;
-    if(svgLeg.viewBox.baseVal.y > maxScroll)
-        svgLeg.viewBox.baseVal.y = maxScroll;
+    if(svgLegVw[1] < minScroll)
+        svgLegVw[1] = minScroll;
+    if(svgLegVw[1] > maxScroll)
+        svgLegVw[1] = maxScroll;
 
-    rectLeg.y.baseVal.value = svgLeg.viewBox.baseVal.y;
+    svgLeg.viewBox.baseVal.y = svgLegVw[1];
+    rectLeg.y.baseVal.value = svgLegVw[1];
     return false;
 }
 
@@ -254,12 +261,11 @@ function plotClicked(event, elementId, pltLim, grid, minorGrid, logScale) {
 
     //else
     const drawSz = size(svgDraw);
-    const scaleX = svgDraw.viewBox.baseVal.width/drawSz[2];
-    const scaleY = svgDraw.viewBox.baseVal.height/drawSz[3];
-    const vBx = svgDraw.viewBox.baseVal.x;
-    const vBy = svgDraw.viewBox.baseVal.y;
-    const plotX = (event.offsetX-drawSz[0]) * scaleX + vBx; // x position inside plotting viewBox
-    const plotY = (event.offsetY-drawSz[1]) * scaleY + vBy; // y position inside plotting viewBox
+    const drawVw = view(svgDraw)
+    const scaleX = drawVw[2]/drawSz[2];
+    const scaleY = drawVw[3]/drawSz[3];
+    const plotX = (event.offsetX-drawSz[0]) * scaleX + drawVw[0]; // x position inside plotting viewBox
+    const plotY = (event.offsetY-drawSz[1]) * scaleY + drawVw[1]; // y position inside plotting viewBox
     const dSnap = 6;
     const detX = dSnap * scaleX;
     const detY = dSnap * scaleY;
@@ -432,8 +438,7 @@ function plotZoom(elementId, rlim, grid, minorGrid, logScale) {
         return;
 
     const svgDraw = getEl("svg_draw_"+elementId);
-    const vb = [svgDraw.viewBox.baseVal.x, svgDraw.viewBox.baseVal.y, 
-                svgDraw.viewBox.baseVal.width, svgDraw.viewBox.baseVal.height];
+    const vb = view(svgDraw);
 
     const pltAr = size(svgDraw);
     let recRel = [];

@@ -12,7 +12,8 @@ const floor = Math.floor;
 const log10 = Math.log10;
 const ceil = Math.ceil;
 
-const zoomButton = 2; // 0 is left click; 2 is right click (recommended)
+const zoomButton = 2; // 0 is left mouse button; 1: middle mouse button; 2: right mouse button (recommended)
+const panButton = 1; // 0 is left mouse button; 1: middle mouse button (recommended); 2: right mouse button
 const axesLblFontSize = 12;
 const legendFontSize = 10;
 const legendFont = "Lucida Sans Typewriter"; // needs to be a monospace font!
@@ -386,7 +387,7 @@ function getNearestLine(elementId, Cx, Cy, dx, dy) {
 }
 
 function plotMouseDown(event, elementId) {
-    if(event.button != zoomButton) // not a right click?
+    if(event.button != zoomButton && event.button != panButton)
         return;
 
     // else start zoom
@@ -395,7 +396,8 @@ function plotMouseDown(event, elementId) {
     const x = event.offsetX;
     const y = event.offsetY;
     const rect = addSvgRec(svg, x, y, 0, 0, "black");
-    addSvgEl(null, rect, {"id":"zoom_rect"+elementId, "fill-opacity":"0.3"});
+    const opacity = (event.button != zoomButton) ? 0 : 0.3; // dont show rectangle during pan
+    addSvgEl(null, rect, {"id":"zoom_rect"+elementId, "fill-opacity":opacity});
     svg.onmousemove = (eventNew) => plotDrawZoom(eventNew, elementId, x, y);
 }
 
@@ -405,12 +407,13 @@ function plotDrawZoom(event, elementId, x0, y0) {
     const y = event.offsetY;
     const newW = x - x0;
     const newH = y - y0;
-    if(newW >= 0) {
+    const isPan = getAttr(rectZoom,"fill-opacity") == 0;
+    if(isPan || newW >= 0) {
         setAttr(rectZoom, "width", newW);
     } else {
         addSvgEl(null, rectZoom, {"width": -newW, "x":x});
     };
-    if(newH >= 0) {
+    if(isPan || newH >= 0) {
         setAttr(rectZoom, "height", newH);
     } else {
         addSvgEl(null, rectZoom, {"height": -newH, "y":y});
@@ -424,18 +427,24 @@ function plotZoom(elementId, rlim, grid, minorGrid, logScale) {
     if(rectZoom == null)
         return;
 
-    rectZoom.remove();
+    const isPan = getAttr(rectZoom,"fill-opacity") == 0;
     const rec = [rectZoom.x.baseVal.value, rectZoom.y.baseVal.value, 
                  rectZoom.width.baseVal.value, rectZoom.height.baseVal.value];
+    rectZoom.remove();
     if(rec[2] == 0 || rec[3] == 0)
         return;
 
     const svgDraw = getEl("svg_draw_"+elementId);
     const vb = [svgDraw.viewBox.baseVal.x, svgDraw.viewBox.baseVal.y, 
                 svgDraw.viewBox.baseVal.width, svgDraw.viewBox.baseVal.height];
+
     const pltAr = [svgDraw.x.baseVal.value, svgDraw.y.baseVal.value, 
                    svgDraw.width.baseVal.value, svgDraw.height.baseVal.value];
-    const recRel =  [(rec[0] - pltAr[0]) / pltAr[2], 1-(rec[1]+rec[3] - pltAr[1])/pltAr[3], rec[2]/pltAr[2], rec[3]/pltAr[3]];
+    let recRel = [];
+    if(isPan)
+        recRel =  [-rec[2]/ pltAr[2], rec[3]/ pltAr[3], 1,1];
+    else
+        recRel =  [(rec[0] - pltAr[0]) / pltAr[2], 1-(rec[1]+rec[3] - pltAr[1])/pltAr[3], rec[2]/pltAr[2], rec[3]/pltAr[3]];
 
     const clim = [rlim[0] + rlim[2]*vb[0]/100, rlim[1] + rlim[3]*(100-vb[3]-vb[1])/100, rlim[2]*vb[2]/100, rlim[3]*vb[3]/100];
     const nlim = [clim[0] + recRel[0]*clim[2], clim[1] + recRel[1]*clim[3], recRel[2]*clim[2], recRel[3]*clim[3]];

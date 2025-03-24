@@ -5,9 +5,10 @@ Supported plot features
 - title and axes label
 - auto and custom set limits
 
-Supported interaction:
-- auto resize to parent div domension
-- zoom via pressing right mouse button while defining zoom-in area
+Supported interactions:
+- auto resize to parent div dimensions
+- zoom-in via pressing right mouse button while defining zoom-in area
+- reset view via double left-click on plot area
 - left click marker placement and removal with linear interpolation on line and snap to exact points
 - Legend interaction
   Single click on legend item: toggle visibility of selected element

@@ -198,7 +198,7 @@ function resizeSvg(elementId, padX, padY, hLegendItems, hLegendMargin) {
         setAttr(svgBg, "width", newChildWidth);            
         setAttr(svgTop, "width", newChildWidth);    
         setAttr(svgBottom, "width", newChildWidth); 
-        svgLeg.x.baseVal.value += newChildWidth - oldChildWidth;  
+        if(svgLeg!=null) svgLeg.x.baseVal.value += newChildWidth - oldChildWidth;  
         // update tooltip location which refers to top SVG and not scaled with drawing SVG
         for(let idx = 0; idx<tooltips.length; ++idx) {
             const offsetX = svgDraw.x.baseVal.value;

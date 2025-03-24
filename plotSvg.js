@@ -12,6 +12,7 @@ const floor = Math.floor;
 const log10 = Math.log10;
 const ceil = Math.ceil;
 
+const zoomButton = 2; // 0 is left click; 2 is right click (recommended)
 const axesLblFontSize = 12;
 const legendFontSize = 10;
 const legendFont = "Lucida Sans Typewriter"; // needs to be a monospace font!
@@ -175,6 +176,19 @@ function legClicked(event, fontsize, ySpacing, elementId, numLines) {
     };
 }
 
+function updateMarkerPos(elementId) {
+    const svgDraw = getEl("svg_draw_"+elementId);
+    const tooltips = document.getElementsByClassName("tooltip_" + elementId);
+    // update tooltip location which refers to top SVG and not scaled with drawing SVG
+    for(let idx = 0; idx<tooltips.length; ++idx) {
+        const scaleX = svgDraw.viewBox.baseVal.width/svgDraw.width.baseVal.value;;
+        const scaleY = svgDraw.viewBox.baseVal.height/svgDraw.height.baseVal.value;;
+
+        tooltips[idx].transform.baseVal[1].matrix.a = scaleX; 
+        tooltips[idx].transform.baseVal[1].matrix.d = scaleY; 
+    }    
+}
+
 function resizeSvg(elementId, padX, padY, hLegendItems, hLegendMargin) {
     const svgLeg = getEl("svg_leg_"+elementId);
     const svgDraw = getEl("svg_draw_"+elementId);
@@ -190,22 +204,13 @@ function resizeSvg(elementId, padX, padY, hLegendItems, hLegendMargin) {
     const newChildHeight = parentHeight-padY;
     const oldChildWidth = svgDraw.width.baseVal.value;
     const oldChildHeight = svgDraw.height.baseVal.value;
-    
-    const tooltips = document.getElementsByClassName("tooltip_" + elementId);
 
     if(oldChildWidth != newChildWidth) {
         setAttr(svgDraw, "width", newChildWidth); 
         setAttr(svgBg, "width", newChildWidth);            
         setAttr(svgTop, "width", newChildWidth);    
         setAttr(svgBottom, "width", newChildWidth); 
-        if(svgLeg!=null) svgLeg.x.baseVal.value += newChildWidth - oldChildWidth;  
-        // update tooltip location which refers to top SVG and not scaled with drawing SVG
-        for(let idx = 0; idx<tooltips.length; ++idx) {
-            const offsetX = svgDraw.x.baseVal.value;
-            const tranformX = tooltips[idx].transform.baseVal[0].matrix.e;
-            const plotX = tranformX- offsetX;
-            tooltips[idx].transform.baseVal[0].matrix.e = offsetX + plotX * newChildWidth / oldChildWidth; 
-        }    
+        if(svgLeg!=null) svgLeg.x.baseVal.value += newChildWidth - oldChildWidth;    
     }
     if(oldChildHeight != newChildHeight) {
         setAttr(svgDraw, "height",  newChildHeight);
@@ -217,14 +222,9 @@ function resizeSvg(elementId, padX, padY, hLegendItems, hLegendMargin) {
             setAttr(svgLeg, "height", newLegHeight);
             svgLeg.viewBox.baseVal.height = newLegHeight;
         }
-        // update tooltip location which refers to top SVG and not scaled with drawing SVG
-        for(let idx = 0; idx<tooltips.length; ++idx) {
-            const offsetY = svgDraw.y.baseVal.value;
-            const tranformY = tooltips[idx].transform.baseVal[0].matrix.f;
-            const plotY = tranformY - offsetY;
-            tooltips[idx].transform.baseVal[0].matrix.f = offsetY + plotY * newChildHeight / oldChildHeight; 
-        }    
     }
+    // update tooltip location which refers to top SVG and not scaled with drawing SVG
+    updateMarkerPos(elementId);
 };
 
 function scrollLegend(event, elementId, hLegendItems){
@@ -246,7 +246,7 @@ function scrollLegend(event, elementId, hLegendItems){
 function plotClicked(event, elementId, pltLim, grid, minorGrid, logScale) {
 
     const svgDraw = getEl("svg_draw_"+elementId);
-    const svg = getEl("svg_"+elementId);
+    //const svg = getEl("svg_"+elementId);
 
     //else
     const drawX = svgDraw.x.baseVal.value;
@@ -271,8 +271,8 @@ function plotClicked(event, elementId, pltLim, grid, minorGrid, logScale) {
 
     const intX = result.x;
     const intY = result.y;
-    const topX = (intX-vBx)/scaleX + drawX;
-    const topY = (intY-vBy)/scaleY + drawY;
+    //const topX = (intX-vBx)/scaleX + drawX;
+    //const topY = (intY-vBy)/scaleY + drawY;
 
     const prefix = "pl_" + elementId;
     const lnId = closestEl.id;
@@ -283,10 +283,12 @@ function plotClicked(event, elementId, pltLim, grid, minorGrid, logScale) {
     const sourceCoord = convertCoord([intX, intY], pltLim, logScale);
     let gl = getEl("gpl_" +elementId+lnIdx);
     if(gl == null) { // create group for all tooltips on the same line (to be used in case line vibility is toggled)
-        gl = addSvgEl(svg, "g", {"id":"gpl_" + elementId+lnIdx});
+        //gl = addSvgEl(svg, "g", {"id":"gpl_" + elementId+lnIdx});
+        gl = addSvgEl(svgDraw, "g", {"id":"gpl_" + elementId+lnIdx});
     }
     const tooltip = addSvgEl(gl, "g", {"class":"tooltip_"+elementId, 
-        "transform":"translate(" + topX + " " + topY + ")"
+        "transform":"translate(" + intX + " " + intY + ")" + " scale("+scaleX + " "+ scaleY + ")"
+        //"transform":"translate(" + topX + " " + topY + ")"
     });
     const rect = addSvgRec(tooltip, 5, -9, 0, 32, lineColor, "rgb(223,223,223)", 1, rx=4);
     
@@ -384,7 +386,7 @@ function getNearestLine(elementId, Cx, Cy, dx, dy) {
 }
 
 function plotMouseDown(event, elementId) {
-    if(event.button != 0) // not a right click?
+    if(event.button != zoomButton) // not a right click?
         return;
 
     // else start zoom
@@ -460,6 +462,7 @@ function setAxesLim(elementId, lim, renderLim, grid, minorGrid, logScale)
     while (gridEl.length > 0) gridEl[0].remove();    
 
     createGrid(elementId, lim, grid, minorGrid, logScale);
+    updateMarkerPos(elementId);
 }
 
 function calcTick(range, nTicks, logScale)

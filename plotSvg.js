@@ -48,8 +48,10 @@ function setLim(vals, lim) {
         let max = -Infinity;
         let min = Infinity;
         while (len--) {
-            min = ((vals[len] < min) && isFinite(vals[len])) ? vals[len] : min;
-            max = ((vals[len] > max) && isFinite(vals[len])) ? vals[len] : max;
+            if(isFinite(vals[len])) {
+                min = (vals[len] < min) ? vals[len] : min;
+                max = (vals[len] > max) ? vals[len] : max;
+            }
         }
 
         lim = [min, max]; 
@@ -83,10 +85,12 @@ function num2eng(val) {
     return out;
 };
 function linspace(start, increment, stop) {
-    numel = floor((stop-start)/increment)+1;
+    // due to rounding errros it can happen numel is to small
+    let numel = floor((stop-start)/increment*(1+1e-12))+1;
+    
     out = Array(numel);
 
-    for(idx=0; idx < numel; ++idx){
+    for(let idx=0; idx < numel; ++idx){
         out[idx] = start + increment*idx;
     };
     return out;
@@ -239,36 +243,36 @@ function scrollLegend(event, elementId, hLegendItems){
     return false;
 }
 
-function plotClicked(event, elementId, pltLim, pltAr, grid, minorGrid, logScale) {
+function plotClicked(event, elementId, pltLim, grid, minorGrid, logScale) {
 
-    svgDraw = getEl("svg_draw_"+elementId);
-    svg = getEl("svg_"+elementId);
-
+    const svgDraw = getEl("svg_draw_"+elementId);
+    const svg = getEl("svg_"+elementId);
 
     //else
     const drawX = svgDraw.x.baseVal.value;
     const drawY = svgDraw.y.baseVal.value;
-    let plotX = event.offsetX-drawX; // x position inside plotting area
-    let plotY = event.offsetY-drawY; // x position inside plotting area
     // rescale in case width changed after drawing
     const plotW = svgDraw.width.baseVal.value;
     const plotH = svgDraw.height.baseVal.value;
-    const scaleX = 100/plotW;
-    const scaleY = 100/plotH;
-    plotX *= scaleX;
-    plotY *= scaleY;
+
+    const scaleX = svgDraw.viewBox.baseVal.width/plotW;
+    const scaleY = svgDraw.viewBox.baseVal.height/plotH;
+    const vBx = svgDraw.viewBox.baseVal.x;
+    const vBy = svgDraw.viewBox.baseVal.y;
+    const plotX = (event.offsetX-drawX) * scaleX + vBx; // x position inside plotting viewBox
+    const plotY = (event.offsetY-drawY) * scaleY + vBy; // y position inside plotting viewBox
     const dSnap = 6;
     const detX = dSnap * scaleX;
     const detY = dSnap * scaleY;
     result = getNearestLine(elementId, plotX, plotY, detX, detY);
-    closestEl = result.ele;
+    const closestEl = result.ele;
     if(closestEl == null)
         return;
 
     const intX = result.x;
     const intY = result.y;
-    const topX = intX/scaleX + drawX;
-    const topY = intY/scaleY + drawY;
+    const topX = (intX-vBx)/scaleX + drawX;
+    const topY = (intY-vBy)/scaleY + drawY;
 
     const prefix = "pl_" + elementId;
     const lnId = closestEl.id;
@@ -277,20 +281,20 @@ function plotClicked(event, elementId, pltLim, pltAr, grid, minorGrid, logScale)
     const plotLine = getEl("pl_"+elementId+lnIdx);
     const lineColor = getAttr(plotLine, "stroke");
     const sourceCoord = convertCoord([intX, intY], pltLim, logScale);
-    const gl = getEl("gpl_" +elementId+lnIdx);
+    let gl = getEl("gpl_" +elementId+lnIdx);
     if(gl == null) { // create group for all tooltips on the same line (to be used in case line vibility is toggled)
         gl = addSvgEl(svg, "g", {"id":"gpl_" + elementId+lnIdx});
     }
     const tooltip = addSvgEl(gl, "g", {"class":"tooltip_"+elementId, 
         "transform":"translate(" + topX + " " + topY + ")"
     });
+    const rect = addSvgRec(tooltip, 5, -9, 0, 32, lineColor, "rgb(223,223,223)", 1, rx=4);
     
     tooltip.onclick = (event) => {
          if(event.srcElement.parentNode.tagName == "g") event.srcElement.parentNode.remove();
-         if(event.detail > 1)  setAxesLim(elementId, pltLim, pltLim, pltAr, grid, minorGrid, logScale);// double click
-    };
-   
-    const rect = addSvgRec(tooltip, 5, -9, 0, 32, lineColor, "rgb(223,223,223)", 1, rx=4);
+         if(event.detail > 1)  setAxesLim(elementId, pltLim, pltLim, grid, minorGrid, logScale);// double click
+    };   
+    
     let line = null;
     if(legendItem != null) {
         text = addSvgTxt(tooltip, legendItem.textContent, 7, -11, 12, "start", "Sans,Arial", "white" ); 
@@ -312,8 +316,6 @@ function plotClicked(event, elementId, pltLim, pltAr, grid, minorGrid, logScale)
     addSvgEl(tooltip, "circle", {"r":dSnap, "fill":"none", "pointer-events": "visible"});
 }
 
-
-
 function convertCoord(point, pltLim, logScale) {
     x = point[0] / 100 * pltLim[2] + pltLim[0];
     y = (1-point[1] / 100) * pltLim[3] + pltLim[1];
@@ -328,14 +330,15 @@ function convertCoord(point, pltLim, logScale) {
 function getNearestLine(elementId, Cx, Cy, dx, dy) {
     let closestEl = null;
     let closestDist = Infinity;
+    let closestXproj = 0;
+    let closestYproj = 0;
 
     const polylines = getEl("gp_"+elementId);
     const nLines = polylines.children.length;
-    let closestXproj = 0;
-    let closestYproj = 0;
+
     for(let idx = 0; idx < nLines; ++idx) {
         const pts = polylines.children[idx].points;
-        for(idxPt = 1; idxPt < pts.length;++idxPt) {
+        for(let idxPt = 1; idxPt < pts.length;++idxPt) {
             const ptA = pts[idxPt-1];
             const ptB = pts[idxPt];
 
@@ -385,7 +388,7 @@ function plotMouseDown(event, elementId) {
         return;
 
     // else start zoom
-    svg = getEl("svg_"+elementId);
+    const svg = getEl("svg_"+elementId);
 
     const x = event.offsetX;
     const y = event.offsetY;
@@ -395,7 +398,7 @@ function plotMouseDown(event, elementId) {
 }
 
 function plotDrawZoom(event, elementId, x0, y0) {  
-    rectZoom = getEl("zoom_rect"+elementId);
+    const rectZoom = getEl("zoom_rect"+elementId);
     const x = event.offsetX;
     const y = event.offsetY;
     const newW = x - x0;
@@ -413,8 +416,8 @@ function plotDrawZoom(event, elementId, x0, y0) {
 }
 
 function plotZoom(elementId, rlim, grid, minorGrid, logScale) {
-    rectZoom = getEl("zoom_rect"+elementId);
-    svg = getEl("svg_"+elementId);
+    const rectZoom = getEl("zoom_rect"+elementId);
+    const svg = getEl("svg_"+elementId);
     svg.onmousemove = null; // disable move event to aovid unnessary callbacks
     if(rectZoom == null)
         return;
@@ -425,7 +428,7 @@ function plotZoom(elementId, rlim, grid, minorGrid, logScale) {
     if(rec[2] == 0 || rec[3] == 0)
         return;
 
-    svgDraw = getEl("svg_draw_"+elementId);
+    const svgDraw = getEl("svg_draw_"+elementId);
     const vb = [svgDraw.viewBox.baseVal.x, svgDraw.viewBox.baseVal.y, 
                 svgDraw.viewBox.baseVal.width, svgDraw.viewBox.baseVal.height];
     const pltAr = [svgDraw.x.baseVal.value, svgDraw.y.baseVal.value, 
@@ -435,10 +438,10 @@ function plotZoom(elementId, rlim, grid, minorGrid, logScale) {
     const clim = [rlim[0] + rlim[2]*vb[0]/100, rlim[1] + rlim[3]*(100-vb[3]-vb[1])/100, rlim[2]*vb[2]/100, rlim[3]*vb[3]/100];
     const nlim = [clim[0] + recRel[0]*clim[2], clim[1] + recRel[1]*clim[3], recRel[2]*clim[2], recRel[3]*clim[3]];
 
-    setAxesLim(elementId, nlim, rlim, pltAr, grid, minorGrid, logScale);
+    setAxesLim(elementId, nlim, rlim, grid, minorGrid, logScale);
 }
 
-function setAxesLim(elementId, lim, renderLim, pltAr, grid, minorGrid, logScale)
+function setAxesLim(elementId, lim, renderLim, grid, minorGrid, logScale)
 {
     const svgDraw = getEl("svg_draw_"+elementId);
     const shiftX = 100*(lim[0]-renderLim[0]) /  renderLim[2];
@@ -456,7 +459,7 @@ function setAxesLim(elementId, lim, renderLim, pltAr, grid, minorGrid, logScale)
     const gridEl = document.getElementsByClassName("cg_"+elementId);
     while (gridEl.length > 0) gridEl[0].remove();    
 
-    createGrid(elementId, pltAr, lim, grid, minorGrid, logScale);
+    createGrid(elementId, lim, grid, minorGrid, logScale);
 }
 
 function calcTick(range, nTicks, logScale)
@@ -489,7 +492,7 @@ function calcTick(range, nTicks, logScale)
     }*/
 }
 
-function createGrid(elementId, pltAr, lim, grid, minorGrid, logScale){    
+function createGrid(elementId, lim, grid, minorGrid, logScale){    
     const svgBg = getEl("svg_bg_"+elementId);
     const svgLeft = getEl("svg_left_"+elementId);
     const svgBottom = getEl("svg_bottom_"+elementId);
@@ -503,7 +506,8 @@ function createGrid(elementId, pltAr, lim, grid, minorGrid, logScale){
         const maxTick = floor(max/tick) * tick;
 
         // offset in the plot in pixel
-        const tickOffset = 100 * (minTick - lim[axIdx])/lim[2+axIdx];
+        const offset = (axIdx > 0) ? lim[axIdx]+lim[axIdx+2] - maxTick : minTick - lim[axIdx];
+        const tickOffset = 100 * (offset)/lim[2+axIdx];
 
         // actual number of ticks
         const nTicks = round((maxTick-minTick)/tick); // rounding should not be required, just put in case of small numerical errors
@@ -517,7 +521,7 @@ function createGrid(elementId, pltAr, lim, grid, minorGrid, logScale){
         } else {
             tickLabel = num2eng(linspace(minTick,tick,maxTick));
         };
-
+ 
         // draw ticks, labels and grid lines
         const dTick = 100 * tick/lim[2+axIdx]; 
 
@@ -532,10 +536,10 @@ function createGrid(elementId, pltAr, lim, grid, minorGrid, logScale){
             if(axIdx>0) [x0,y0,x1,y1] = [y0,x0,y1,x1]; // swap x,y 
             let minorTickPos = Array();
             if(logScale[axIdx] && tick == 1) {
-                minorTickPos = logspace(1, (9/(nMinorTicks[axIdx]-1)), 10);
+                minorTickPos = logspace(1, (9/(nMinorTicksMax[axIdx]-1)), 10);
                 minorTickPos.forEach((value, index) => {minorTickPos[index] = (1-minorTickPos[index])*dTick});
             } else {
-                minorTickPos = linspace(0, (1/nMinorTicks[axIdx])*dTick, dTick);
+                minorTickPos = linspace(0, (1/nMinorTicksMax[axIdx])*dTick, dTick);
             };
             for(let idx = 1; idx < minorTickPos.length-1; ++idx) {
                 addSvgLn(defsg, x0,y0,x1,y1, "rgb(223,223,223)", "2 4");
@@ -555,15 +559,14 @@ function createGrid(elementId, pltAr, lim, grid, minorGrid, logScale){
         addSvgLn(defsg, 0, 0, tx, ty);
  
         for(let idx = 0; idx <= nTicks; ++idx) {
-            const tickPos =  tickOffset + dTick * idx;      
-            if(axIdx > 0) {// todo get rid of duplicate code                          
-                var textEl = addSvgTxt(svgAx, tickLabel[nTicks-idx], pltAr[0] - axesLblFontSize*0.5, tickPos+"%", axesLblFontSize, "end");
-                addSvgEl(null,textEl,{"dominant-baseline":"central",  "class":"cg_" +elementId});
-            } else{
-                var textEl = addSvgTxt(svgAx, tickLabel[idx], tickPos+"%", axesLblFontSize*1.4, axesLblFontSize);
-                
-            };
-            setAttr(textEl,"class","cg_" +elementId);
+            const tickPos =  tickOffset + dTick * idx; 
+            let textEl = null;     
+            if(axIdx > 0)                
+                textEl = addSvgTxt(svgAx, tickLabel[nTicks-idx], svgAx.width.baseVal.value - axesLblFontSize*0.5, tickPos+"%", axesLblFontSize, "end");
+            else 
+                textEl = addSvgTxt(svgAx, tickLabel[idx], tickPos+"%", axesLblFontSize*0.9, axesLblFontSize);
+
+            addSvgEl(null,textEl,{"dominant-baseline":"central", "class":"cg_" +elementId});
             const x = (axIdx>0) ? 0:  tickPos;
             const y = (axIdx>0) ? tickPos: 0;
             addSvgEl(svgBg, "use", {"href":"#mg" + axIdx + "_"+elementId, "x":x, "y":y, "class":"cg_" +elementId});
@@ -726,7 +729,7 @@ function plotSvg(elementId, x, y, numLines,
         // create legend items
         for(let lnIdx = 0; lnIdx < nLegend; ++lnIdx) {
             const colorIdx = lnIdx % colorMapRGB.length;
-            yOffset = lnIdx * (legendFontSize + legendYSpacing) +  legendYSpacing;
+            const yOffset = lnIdx * (legendFontSize + legendYSpacing) +  legendYSpacing;
     
             const legItemGroup = new addSvgEl(svgLeg, "g", {"id": "lgi_"+elementId+"_"+lnIdx});
 
@@ -811,7 +814,7 @@ function plotSvg(elementId, x, y, numLines,
     ///////////////////////////////
     // draw ylabel
     ///////////////////////////////
-    const svgLeft= addSvgEl(svg, "svg", {"id":"svg_left_"+elementId, "y": pltAr[1], "overflow":"visible", "height":pltAr[3]});
+    const svgLeft= addSvgEl(svg, "svg", {"id":"svg_left_"+elementId, "width": pltAr[0], "y": pltAr[1], "overflow":"visible", "height":pltAr[3]});
     if(ylabel.length>0) { 
         let text = addSvgEl(svgLeft, "text", {"writing-mode":"sideways-lr", 
         "fill":"black", "font-size":axesLblFontSize, "text-anchor":"middle", 
@@ -876,7 +879,7 @@ function plotSvg(elementId, x, y, numLines,
         };
     };
     
-    createGrid(elementId, pltAr, pltLim, grid, gridMinorSet, logScale);
+    createGrid(elementId, pltLim, grid, gridMinorSet, logScale);
 
     //////////////////////////////
     // create polylines
@@ -919,10 +922,10 @@ function plotSvg(elementId, x, y, numLines,
 
 
     // add event callbacks
-    plRec.onclick = (event) => plotClicked(event, elementId, pltLim, pltAr, grid, gridMinorSet, logScale)
+    plRec.onclick = (event) => plotClicked(event, elementId, pltLim, grid, gridMinorSet, logScale)
     svg.oncontextmenu = (event) => {event.preventDefault()}; // prevent context menu during zoom
     svgDraw.onmousedown = (event) => plotMouseDown(event, elementId);
-    svgDraw.ondblclick = () => setAxesLim(elementId, pltLim, pltLim, pltAr, grid, gridMinorSet, logScale);
+    svgDraw.ondblclick = () => setAxesLim(elementId, pltLim, pltLim, grid, gridMinorSet, logScale);
     svg.onmousedown = (event) => {event.preventDefault()}; // prevent context menu during zoom
     svg.onmouseup = () => plotZoom( elementId, pltLim, grid, gridMinorSet, logScale);
 

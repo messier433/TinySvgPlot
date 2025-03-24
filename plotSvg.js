@@ -12,7 +12,7 @@ const floor = Math.floor;
 const log10 = Math.log10;
 const ceil = Math.ceil;
 
-const zoomButton = 2; // 0 is left mouse button; 1: middle mouse button; 2: right mouse button (recommended)
+const zoomButton = 22; // 0 is left mouse button; 1: middle mouse button; 2: right mouse button (recommended)
 const panButton = 1; // 0 is left mouse button; 1: middle mouse button (recommended); 2: right mouse button
 const axesLblFontSize = 12;
 const legendFontSize = 10;
@@ -428,7 +428,7 @@ function plotZoom(elementId, rlim, grid, minorGrid, logScale) {
     const isPan = getAttr(rectZoom,"fill-opacity") == 0;
     const rec = size(rectZoom);
     rectZoom.remove();
-    if(rec[2] == 0 || rec[3] == 0)
+    if(~isPan && (rec[2] == 0 || rec[3] == 0))
         return;
 
     const svgDraw = getEl("svg_draw_"+elementId);
@@ -448,8 +448,7 @@ function plotZoom(elementId, rlim, grid, minorGrid, logScale) {
     setAxesLim(elementId, nlim, rlim, grid, minorGrid, logScale);
 }
 
-function setAxesLim(elementId, lim, renderLim, grid, minorGrid, logScale)
-{
+function setAxesLim(elementId, lim, renderLim, grid, minorGrid, logScale){
     const svgDraw = getEl("svg_draw_"+elementId);
     const shiftX = 100*(lim[0]-renderLim[0]) /  renderLim[2];
     const shiftY = 100*(renderLim[1]+renderLim[3]-lim[1] - lim[3]) /  renderLim[3];
@@ -504,7 +503,7 @@ function createGrid(elementId, lim, grid, minorGrid, logScale){
     const svgBg = getEl("svg_bg_"+elementId);
     const svgLeft = getEl("svg_left_"+elementId);
     const svgBottom = getEl("svg_bottom_"+elementId);
-
+    let nMinorTicks = nMinorTicksMax;
     for(let axIdx = 0; axIdx<2;++axIdx){
         const svgAx = (axIdx > 0) ? svgLeft : svgBottom; 
         const tick = calcTick(lim[2+axIdx], nTicksMax[axIdx], logScale[axIdx]);
@@ -536,20 +535,21 @@ function createGrid(elementId, lim, grid, minorGrid, logScale){
         // axis labels and grid
         const defs =  addSvgEl(svgBg, "defs", {"class":"cg_" +elementId});
         const defsg =  addSvgEl(defs, "g", {"id": "mg" + axIdx + "_" + elementId});
-        if(minorGrid[axIdx] && nMinorTicksMax[axIdx] > 0) {
-            const x0 = minorTickPos[idx];
-            const x1 = minorTickPos[idx];
-            const y0 = 0;
-            const y1 = 100;
-            if(axIdx>0) [x0,y0,x1,y1] = [y0,x0,y1,x1]; // swap x,y 
+        if(minorGrid[axIdx] && nMinorTicks[axIdx] > 0) {
             let minorTickPos = Array();
             if(logScale[axIdx] && tick == 1) {
-                minorTickPos = logspace(1, (9/(nMinorTicksMax[axIdx]-1)), 10);
-                minorTickPos.forEach((value, index) => {minorTickPos[index] = (1-minorTickPos[index])*dTick});
+                minorTickPos = logspace(1, (9/(nMinorTicks[axIdx]-1)), 10);
+                minorTickPos.forEach((value, index) => {minorTickPos[index] = (minorTickPos[index])*dTick});
             } else {
-                minorTickPos = linspace(0, (1/nMinorTicksMax[axIdx])*dTick, dTick);
+                minorTickPos = linspace(0, (1/nMinorTicks[axIdx])*dTick, dTick);
             };
+            
             for(let idx = 1; idx < minorTickPos.length-1; ++idx) {
+                let x0 = minorTickPos[idx];
+                let x1 = minorTickPos[idx];
+                let y0 = 0;
+                let y1 = 100;
+                if(axIdx>0) [x0,y0,x1,y1] = [y0,-x0,y1,-x1]; // swap x,y 
                 addSvgLn(defsg, x0,y0,x1,y1, "rgb(223,223,223)", "2 4");
             };
         };
@@ -933,7 +933,7 @@ function plotSvg(elementId, x, y, numLines,
     svgDraw.ondblclick = () => setAxesLim(elementId, pltLim, pltLim, grid, gridMinorSet, logScale);
     svg.onmousedown = (event) => {event.preventDefault()}; // prevent context menu during zoom
     svg.onmouseup = () => plotZoom( elementId, pltLim, grid, gridMinorSet, logScale);
-
+   
     if(legend.length > 0)
         gleg.onwheel = (event) => scrollLegend(event, elementId, hLegendItems)
     //gleg.addEventListener('wheel', () => this.scrollLegend(), { passive:false });

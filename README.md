@@ -4,6 +4,7 @@ Supported plot features
 - major and minor grid lines
 - title, subtitle and axes label
 - auto and custom set axes limits
+- legend inside or next to plot area
 
 Supported interactions:
 - auto resize to parent div dimensions

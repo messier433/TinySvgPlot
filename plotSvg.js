@@ -33,6 +33,8 @@ const colorMapRGB =  ["rgb(0,114,190)", "rgb(218,83,25)", "rgb(238,178,32)",
                     "rgb(126,47,142)", "rgb(119,173,48)", "rgb(77,191,239)",
                     "rgb(163,20,47)"];
 
+const ns = "http://www.w3.org/2000/svg";
+
 function getEl(id){
     return document.getElementById(id);
 };
@@ -114,7 +116,6 @@ function decades(start, increment, stop) {
 };
 
 function addSvgEl(parent, ele, attrs) {
-    const ns = "http://www.w3.org/2000/svg";
     //create the element with a specified string:
     const element = (typeof ele == "string") ? document.createElementNS(ns, ele) : ele;
     //create a for...in loop set attributes:
@@ -207,6 +208,7 @@ function resizeSvg(elementId, padX, padY, hLegendItems, hLegendMargin) {
     const svgBottom = getEl("svg_bottom_"+elementId);
     const svgLeft = getEl("svg_left_"+elementId);
     const svg = getEl("svg_"+elementId);
+    const button = getEl("bd_"+elementId);
     
     const parentSz = size(svg);
     const childSz = size(svgDraw);
@@ -218,7 +220,8 @@ function resizeSvg(elementId, padX, padY, hLegendItems, hLegendMargin) {
         setAttr(svgBg, "width", newChildWidth);            
         setAttr(svgTop, "width", newChildWidth);    
         setAttr(svgBottom, "width", newChildWidth); 
-        if(svgLeg!=null) svgLeg.x.baseVal.value += newChildWidth - childSz[2];    
+        if(svgLeg!=null) svgLeg.x.baseVal.value += newChildWidth - childSz[2];  
+        button.transform.baseVal[0].matrix.e += newChildWidth - childSz[2];   
     }
     if(childSz[3] != newChildHeight) {
         setAttr(svgDraw, "height",  newChildHeight);
@@ -508,7 +511,7 @@ function createGrid(elementId, lim, grid, minorGrid, logScale){
     const svgBg = getEl("svg_bg_"+elementId);
     const svgLeft = getEl("svg_left_"+elementId);
     const svgBottom = getEl("svg_bottom_"+elementId);
-    let nMinorTicks = nMinorTicksMax;
+    
     for(let axIdx = 0; axIdx<2;++axIdx){
         const svgAx = (axIdx > 0) ? svgLeft : svgBottom; 
         const tick = calcTick(lim[2+axIdx], nTicksMax[axIdx], logScale[axIdx]);
@@ -540,51 +543,68 @@ function createGrid(elementId, lim, grid, minorGrid, logScale){
         // axis labels and grid
         const defs =  addSvgEl(svgBg, "defs", {"class":"cg_" +elementId});
         const defsg =  addSvgEl(defs, "g", {"id": "mg" + axIdx + "_" + elementId});
-        if(minorGrid[axIdx] && nMinorTicks[axIdx] > 0) {
+        const nMinorTicks = (logScale[axIdx] || minorGrid[axIdx]) ?  nMinorTicksMax[axIdx] : 0;
+        if(nMinorTicks > 0) {
             let minorTickPos = Array();
             if(logScale[axIdx] && tick == 1) {
-                minorTickPos = logspace(1, (9/(nMinorTicks[axIdx]-1)), 10);
+                minorTickPos = logspace(1, (9/(nMinorTicks-1)), 10);
                 minorTickPos.forEach((value, index) => {minorTickPos[index] = (minorTickPos[index])*dTick});
             } else {
-                minorTickPos = linspace(0, (1/nMinorTicks[axIdx])*dTick, dTick);
+                minorTickPos = linspace(0, (1/nMinorTicks)*dTick, dTick);
             };
             
             for(let idx = 1; idx < minorTickPos.length-1; ++idx) {
-                let x0 = minorTickPos[idx];
-                let x1 = minorTickPos[idx];
-                let y0 = 0;
-                let y1 = 100;
-                if(axIdx>0) [x0,y0,x1,y1] = [y0,-x0,y1,-x1]; // swap x,y 
-                addSvgLn(defsg, x0,y0,x1,y1, "rgb(223,223,223)", "2 4");
+                let cg = [minorTickPos[idx], 0, minorTickPos[idx], 100];
+                let ct0 = [minorTickPos[idx], 0,  minorTickPos[idx], minorTickLength];
+                let ct1 = [minorTickPos[idx], 100-minorTickLength, minorTickPos[idx],  100];
+                if(axIdx>0) [cg,ct0,ct1] = [[cg[1],dTick-cg[0],cg[3],dTick-cg[2]],[ct0[1],dTick-ct0[0],ct0[3],dTick-ct0[2]],[ct1[1],dTick-ct1[0],ct1[3],dTick-ct1[2]]]; // swap x,y 
+                
+                if(minorGrid[axIdx]) addSvgLn(defsg, cg[0],cg[1],cg[2],cg[3], "rgb(223,223,223)", "2 4");
+                addSvgLn(defsg,ct0[0],ct0[1],ct0[2],ct0[3]); 
+                addSvgLn(defsg,ct1[0],ct1[1],ct1[2],ct1[3]); 
             };
         };
         
-        let x0 = "0%";
-        let y0 = (100-tickLength) +"%";
-        let x1 = "0%";
-        let y1 = "100%";
-        let tx = "0%";
-        let ty = tickLength +"%";
-        if(axIdx>0) [x0,y0,x1,y1,tx,ty] = [y0,x0,y1,x1,ty,tx];  // swap x,y 
-        
-        if(grid) addSvgLn(defsg, 0, 0, x1, y1, "rgb(223,223,223)");
-        addSvgLn(defsg,x0, y0, x1, y1); 
-        addSvgLn(defsg, 0, 0, tx, ty);
+        let x = [0, (100-tickLength), 0, 100, 0, tickLength];
+        if(axIdx>0) x = [x[1],x[0],x[3],x[2],x[5],x[4]];  // swap x,y 
+        if(grid) addSvgLn(defsg, 0, 0, x[2], x[3], "rgb(223,223,223)");
+        addSvgLn(defsg,x[0], x[1], x[2], x[3]); 
+        addSvgLn(defsg, 0, 0, x[4], x[5]);
  
-        for(let idx = 0; idx <= nTicks; ++idx) {
+        for(let idx = -1; idx <= nTicks; ++idx) {
             const tickPos =  tickOffset + dTick * idx; 
-            let textEl = null;     
-            if(axIdx > 0)                
-                textEl = addSvgTxt(svgAx, tickLabel[nTicks-idx], size(svgAx)[2] - axesLblFontSize*0.5, tickPos+"%", axesLblFontSize, "end");
-            else 
-                textEl = addSvgTxt(svgAx, tickLabel[idx], tickPos+"%", axesLblFontSize*0.9, axesLblFontSize);
+            let textEl = null; 
+         
+            if(idx >= 0) {
+                if(axIdx > 0)                
+                    textEl = addSvgTxt(svgAx, tickLabel[nTicks-idx], size(svgAx)[2] - axesLblFontSize*0.5, tickPos+"%", axesLblFontSize, "end");
+                else 
+                    textEl = addSvgTxt(svgAx, tickLabel[idx], tickPos+"%", axesLblFontSize*0.9, axesLblFontSize);
 
-            addSvgEl(null,textEl,{"dominant-baseline":"central", "class":"cg_" +elementId});
-            const x = (axIdx>0) ? 0:  tickPos;
-            const y = (axIdx>0) ? tickPos: 0;
-            addSvgEl(svgBg, "use", {"href":"#mg" + axIdx + "_"+elementId, "x":x, "y":y, "class":"cg_" +elementId});
+                addSvgEl(null,textEl,{"dominant-baseline":"central", "class":"cg_" +elementId});
+                }
+            let c = [tickPos, 0];
+            if(axIdx>0) c = [c[1],c[0]];
+            addSvgEl(svgBg, "use", {"href":"#mg" + axIdx + "_"+elementId, "x":c[0], "y":c[1], "class":"cg_" +elementId});
         };
     };   
+}
+
+function downloadSvg(elementId, title) {
+    const button = getEl("bd_"+elementId);
+    button.style.display = "none"; // hide button for screenshot
+    const svg = getEl("svg_"+elementId);
+    const svgSz = size(svg);
+    const outerStr = "\<svg width=\"" + svgSz[2] + "\" height=\""+svgSz[3]+"\" xmlns=\""+ns+"\"\>";
+    const svgBlob = new Blob([outerStr, svg.innerHTML, "\</svg\>"], {type:"image/svg+xml;charset=utf-8"});
+    const svgUrl = URL.createObjectURL(svgBlob);
+    const downloadLink = document.createElement("a");
+    downloadLink.href = svgUrl;
+    downloadLink.download = "snapshot_"+title +".svg";
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    document.body.removeChild(downloadLink);
+    button.style.display = "block";
 }
 
 function plotSvg(elementId, x, y, numLines, 
@@ -594,8 +614,6 @@ function plotSvg(elementId, x, y, numLines,
 }={}
 )
 {      
-    const ns = "http://www.w3.org/2000/svg";
-
     let logScale = [false, false];
     if(xScale == "log") {
         x = x.map(log10);
@@ -652,6 +670,9 @@ function plotSvg(elementId, x, y, numLines,
         "dominant-baseline:central;\n" + 
         "font-family:"+legendFont+";\n" + 
         "}\n" + 
+        ".b:hover polyline{\n" + 
+        "opacity:0.5;\n" +
+        "}\n" + 
         "]]\>\n" + 
         "\</style\>\n";
 
@@ -669,7 +690,8 @@ function plotSvg(elementId, x, y, numLines,
         pltArYOffset += (subTitleFontSize + fontSpacing) * subtitleLines.length;
     };
 
-    pltArYOffset = pltArYOffset + 10;
+    pltArYOffset = (pltArYOffset < 19) ? 25 : pltArYOffset + 6;
+    
 
     let plotHeight = svgSz[3]-pltArYOffset-yAxesSpacing;
     let plotWidth = svgSz[2]-pltArXOffset;
@@ -930,6 +952,13 @@ function plotSvg(elementId, x, y, numLines,
     svg.appendChild(gleg); 
     
 
+    // draw download button
+    const downloadBtn = addSvgEl(svgTop, "g", {"id":"bd_"+elementId, "transform":"translate(" + (pltAr[2] - 16) +" "+ (pltAr[1] - 24) + ")", 
+        "stroke-width":2,"stroke-linecap":"round", "stroke-linejoin":"round","class":"b", "pointer-events": "visible"});
+    addSvgEl(downloadBtn, "polyline", {"stroke":"black", "fill":"none","points":"8,0 8,16 2,9 8,16 14,9"});
+    addSvgEl(downloadBtn, "polyline", {"stroke":"black", "fill":"none","points":"0,17 0,20 16,20 16,17"});
+    addSvgRec(downloadBtn, 0, 0, 21, 21)
+    downloadBtn.onclick = () => {downloadSvg(elementId, title)};
 
     // add event callbacks
     plRec.onclick = (event) => plotClicked(event, elementId, pltLim, grid, gridMinorSet, logScale)

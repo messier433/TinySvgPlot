@@ -1,4 +1,4 @@
-![Screenshot 2025-03-30 090623](https://github.com/user-attachments/assets/efc6f90a-7e5c-494d-b183-e48283139608)
+![Screenshot 2025-03-30 175823](https://github.com/user-attachments/assets/fd9ca9d8-7afe-4fd7-a208-0aa0d71a2484)
 
 Supported plot features
 - multiple line plots with different markers and dash styles

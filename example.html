@@ -5,46 +5,44 @@
 </head>
 <body style="margin: 0px;padding:0px">
   
-    <div id="drawing1" style="height:calc(100vh - 16px)"></div>
-    <div id="drawing2"></div>
-    <div id="drawing3"></div>
+    <div id="drawing" style="width:100%;height:calc(100vh - 16px)"></div>
 
-  <script src="plotSvg.js"></script>
+  <script src="https://messier433.github.io/YaJsSvgPlot/plotSvgMin.js"></script>
   <script>
-  function linspace(start, increment, stop) {
-      numel = Math.floor((stop-start)/increment)+1;
-      out = Array(numel);
+  function createData(numPhases) {
+    const numPts = 256;
+    const y = Array(numPhases*numPts);
+    const x = Array(numPts);
+    const names =  Array(numLines);
+    for(idxPt = 0; idxPt < numPts; ++idxPt) {
+        x[idxPt] = idxPt * 2*Math.PI/numPts;
+        for(idxPh = 0; idxPh < numPhases; ++idxPh) {
+            phase = idxPh*2*Math.PI/numPhases;
+            y[idxPh*numPts + idxPt] = Math.sin(x[idxPt]  + phase);
+            if(idxPt == 0) names[idxPh] = (phase/Math.PI*180) + "°";
+        }
+    }
 
-      for(idx=0; idx < numel; ++idx){
-          out[idx] = start + increment*idx;
-      };
-      return out;
+    return [x, y, names];
   };
 
-  const optParam = {title:"test", 
-                    subtitle:"test1",
-                    xlabel: "xlabel",
-                    ylabel: "ylabel",
-                    xScale: "log",
-                    yScale: "lin",
-                    xlim: [1,100],
-                    legend: linspace(1000000000,1, 1000000030), //["test1", "test2"]
-                    legendLocation: "northeastoutside"
+
+
+   numLines =4;
+   [x, y, names] = createData(numLines);
+ 
+   const optParam = {title:"Sine waves", 
+                    subtitle:"with different phases",
+                    xlabel: "Time",
+                    ylabel: "Amplitude",
+                    legend: names,
+                    legendLocation: "northeastoutside",
                     //legendLocation: "northeast"
                     };
 
-  numLines =10;
-   x = linspace(1,10, 400);
-   y = Array.from(Array(x.length*numLines), () => Math.random());
-   //y = Array.from(Array(x.length*numLines), () => 1);
-   y1 = Array.from(Array(x.length*numLines), () => Math.random());
-   y2 = Array.from(Array(x.length*numLines), () => Math.random());
- 
-   //x = [0,100, 200];
-   //y = [0,100, 300, 100,200, 300];
-   plotSvg("drawing1", x, y, numLines, optParam);
-   //plotSvg("drawing2", x, y1, numLines, optParam);
-   //plotSvg("drawing3", x, y2, numLines, optParam);
+
+   plotSvg("drawing", x, y, numLines, optParam);
+
   </script>
 </body>
 </html>

@@ -599,7 +599,6 @@ function addTickLines(parent, elementId, offset, grid, axIdx, tickLength, dash){
         "class":"marker_" + elementId});
     addSvgEl(null, endTick, { "transform":"translate("+x[4]+" "+x[5]+") scale(1 1)",
         "class":"marker_" + elementId});
-        console.log(x);  console.log(endTick)
         
 }
 

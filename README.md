@@ -16,6 +16,6 @@ Supported interactions:
   Single-click on legend item: toggle visibility of selected element<br />
   Double-click of legend item: if selected item is visible, hide all other items. If invisible, make all items visible<br />
   Mouse wheel: Scroll legend in case items do not fit in vertical legend area<br />
-- pan via middle mouse button 
+- pan via middle mouse button or right mouse button with "Shift" pressed on keyboard
 - download generated SVG
 

@@ -535,7 +535,7 @@ function createGrid(elementId, lim, grid, minorGrid, logScale){
         // actual number of ticks
         const nTicks = round((maxTick-minTick)/tick); // rounding should not be required, just put in case of small numerical errors
         
-        const tickLength = 1;
+        const tickLength = 8;
         const minorTickLength = tickLength/2;
 
         let tickLabel = Array();
@@ -562,23 +562,13 @@ function createGrid(elementId, lim, grid, minorGrid, logScale){
             };
             
             for(let idx = 1; idx < minorTickPos.length-1; ++idx) {
-                let cg = [minorTickPos[idx], 0, minorTickPos[idx], 100];
-                let ct0 = [minorTickPos[idx], 0,  minorTickPos[idx], minorTickLength];
-                let ct1 = [minorTickPos[idx], 100-minorTickLength, minorTickPos[idx],  100];
-                if(axIdx>0) [cg,ct0,ct1] = [[cg[1],dTick-cg[0],cg[3],dTick-cg[2]],[ct0[1],dTick-ct0[0],ct0[3],dTick-ct0[2]],[ct1[1],dTick-ct1[0],ct1[3],dTick-ct1[2]]]; // swap x,y 
-                
-                if(minorGrid[axIdx]) addSvgLn(defsg, cg[0],cg[1],cg[2],cg[3], "rgb(223,223,223)", "2 4");
-                addSvgLn(defsg,ct0[0],ct0[1],ct0[2],ct0[3]); 
-                addSvgLn(defsg,ct1[0],ct1[1],ct1[2],ct1[3]); 
+                const offset = (axIdx > 0) ? dTick-minorTickPos[idx] : minorTickPos[idx];
+                addTickLines(defsg, elementId, offset, grid, axIdx, minorTickLength, "2 4");
             };
         };
         
-        let x = [0, (100-tickLength), 0, 100, 0, tickLength];
-        if(axIdx>0) x = [x[1],x[0],x[3],x[2],x[5],x[4]];  // swap x,y 
-        if(grid) addSvgLn(defsg, 0, 0, x[2], x[3], "rgb(223,223,223)");
-        addSvgLn(defsg,x[0], x[1], x[2], x[3]); 
-        addSvgLn(defsg, 0, 0, x[4], x[5]);
- 
+        addTickLines(defsg, elementId, 0, grid, axIdx, tickLength, "");
+
         for(let idx = -1; idx <= nTicks; ++idx) {
             const tickPos =  tickOffset + dTick * idx; 
             let textEl = null; 
@@ -593,9 +583,24 @@ function createGrid(elementId, lim, grid, minorGrid, logScale){
                 }
             let c = [tickPos, 0];
             if(axIdx>0) c = [c[1],c[0]];
-            addSvgEl(svgBg, "use", {"href":"#mg" + axIdx + "_"+elementId, "x":c[0], "y":c[1], "class":"cg_" +elementId});
+            addSvgEl(svgBg, "use", {"href":"#mg" + axIdx + "_"+elementId, "x":c[0], "y":c[1], 
+                "class":"cg_" +elementId});
         };
     };   
+}
+
+function addTickLines(parent, elementId, offset, grid, axIdx, tickLength, dash){
+    let x = [offset, 0, 0, tickLength, offset, 100];
+    if(axIdx>0) x = [x[1],x[0],x[3],x[2],x[5],x[4]];  // swap x,y 
+    if(grid) addSvgLn(parent, x[0], x[1], x[4], x[5], "rgb(223,223,223)", dash);
+    const startTick = addSvgLn(parent, 0,0, x[2], x[3]);
+    const endTick = addSvgLn(parent, -x[2], -x[3], 0, 0);
+    addSvgEl(null, startTick, { "transform":"translate("+x[0]+" "+x[1]+") scale(1 1)",
+        "class":"marker_" + elementId});
+    addSvgEl(null, endTick, { "transform":"translate("+x[4]+" "+x[5]+") scale(1 1)",
+        "class":"marker_" + elementId});
+        console.log(x);  console.log(endTick)
+        
 }
 
 function downloadSvg(elementId, title) {

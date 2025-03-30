@@ -1,4 +1,4 @@
-<a href="https://messier433.github.io/YaJsSvgPlot/example.html"><img src="https://github.com/user-attachments/assets/fd9ca9d8-7afe-4fd7-a208-0aa0d71a2484"/></a>
+<a href="https://messier433.github.io/YaJsSvgPlot/example.html" target="_blank"><img src="https://github.com/user-attachments/assets/fd9ca9d8-7afe-4fd7-a208-0aa0d71a2484"/></a>
 Supported plot features
 - multiple line plots with different markers and dash styles
 - linear and log scale of axes

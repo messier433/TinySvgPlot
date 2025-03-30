@@ -19,7 +19,7 @@
         for(idxPh = 0; idxPh < numPhases; ++idxPh) {
             phase = idxPh*2*Math.PI/numPhases;
             y[idxPh*numPts + idxPt] = Math.sin(x[idxPt]  + phase);
-            if(idxPt == 0) names[idxPh] = (phase/Math.PI*180) + "°";
+            if(idxPt == 0) names[idxPh] = decodeURI("%CF%86") + "0:" + (phase/Math.PI*180) + "°";
         }
     }
 

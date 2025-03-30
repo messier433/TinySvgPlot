@@ -1,7 +1,7 @@
 ![Screenshot 2025-03-30 090623](https://github.com/user-attachments/assets/efc6f90a-7e5c-494d-b183-e48283139608)
 
 Supported plot features
-- line plot with multiple elements
+- multiple line plots with different markers and dash styles
 - linear and log scale of axes
 - major and minor grid lines
 - title, subtitle and axes label

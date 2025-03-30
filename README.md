@@ -18,6 +18,6 @@ Supported interactions:
 - pan via middle mouse button 
 - download generated SVG
 
-<div>
-    <img src="https://github.com/user-attachments/assets/4a49ad0f-c5f3-44fb-87b5-e159a0dc26c7"></img>
-</div>
+
+
+![Screenshot 2025-03-30 090623](https://github.com/user-attachments/assets/efc6f90a-7e5c-494d-b183-e48283139608)

@@ -17,3 +17,7 @@ Supported interactions:
   Mouse wheel: Scroll legend in case items do not fit in vertical legend area<br />
 - pan via middle mouse button 
 - download generated SVG
+
+<div>
+    <img src="https://github.com/user-attachments/assets/4a49ad0f-c5f3-44fb-87b5-e159a0dc26c7"></img>
+</div>

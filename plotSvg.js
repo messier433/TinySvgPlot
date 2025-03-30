@@ -617,13 +617,18 @@ function downloadSvg(elementId, title) {
 }
 
 function addMarker(defs, elementId, id, elements) {
+    const svgDraw = getEl("svg_draw_"+elementId);
+    const drawSz = size(svgDraw);
+    const drawVw = view(svgDraw)
+    const scaleX = drawVw[2]/drawSz[2];
+    const scaleY = drawVw[3]/drawSz[3];
     //"o","+", "*", ".", "x", "_", "|", "sq"
     const marker = addSvgEl(defs, "marker", {"id":id,
         "markerWidth":"10", "markerHeight":"10", "refX":"5", "refY":"5",
         "markerUnits":"userSpaceOnUse", "fill":"none","stroke":"context-stroke"});
     const markerGrp = addSvgEl(marker, "g", {
         "stroke-width":1.5,"vector-effect":"non-scaling-stroke",
-        "class":"marker_" + elementId, "transform":"translate(5 5) scale(1 1)"});
+        "class":"marker_" + elementId, "transform":"translate(5 5) scale("+scaleX+" " +scaleY +")"});
 
     for(let idx = 0; idx < elements.length; ++idx)
         markerGrp.appendChild(elements[idx]);
@@ -1035,8 +1040,7 @@ function plotSvg(elementId, x, y, numLines,
         gleg.onwheel = (event) => scrollLegend(event, elementId, hLegendItems)
     //gleg.addEventListener('wheel', () => this.scrollLegend(), { passive:false });
     //window.addEventListener('resize', () => resizeSvg(elementId, padding[0], padding[1], hLegendItems, hLegendMargin));
-    new ResizeObserver(() => resizeSvg(elementId, padding[0], padding[1], hLegendItems, hLegendMargin)).observe(svg)
-    
+    new ResizeObserver(() => resizeSvg(elementId, padding[0], padding[1], hLegendItems, hLegendMargin)).observe(svg);
 };
 
 };

@@ -258,7 +258,6 @@ function scrollLegend(event, elementId, hLegendItems){
 }
 
 function plotClicked(event, elementId, pltLim, grid, minorGrid, logScale) {
-
     const svgDraw = getEl("svg_draw_"+elementId);
 
     //const svg = getEl("svg_"+elementId);
@@ -397,19 +396,19 @@ function getNearestLine(elementId, Cx, Cy, dx, dy) {
 function plotMouseDown(event, elementId) {
 
     const svgDraw = getEl("svg_draw_"+elementId);
-    if(event.button == zoomButton)
-        svgDraw.style.cursor = "zoom-in";
-    else if(event.button == panButton)
-        svgDraw.style.cursor = "grab";
-    else 
+    let isPan = 0;
+    if(event.button == panButton || (event.button == zoomButton && event.shiftKey))
+        isPan = 1;
+    else if (event.button != zoomButton)
         return;
 
+    svgDraw.style.cursor = isPan ? "move" : "zoom-in";
     const svg = getEl("svg_"+elementId);
     // else start zoom
     const x = event.offsetX;
     const y = event.offsetY;
     const rect = addSvgRec(svg, x, y, 0, 0, "black");
-    const opacity = (event.button != zoomButton) ? 0 : 0.3; // dont show rectangle during pan
+    const opacity = isPan ? 0 : 0.3; // dont show rectangle during pan
     addSvgEl(null, rect, {"id":"zoom_rect"+elementId, "fill-opacity":opacity});
     svg.onmousemove = (eventNew) => plotDrawZoom(eventNew, elementId, x, y);
 }

@@ -394,12 +394,17 @@ function getNearestLine(elementId, Cx, Cy, dx, dy) {
 }
 
 function plotMouseDown(event, elementId) {
-    if(event.button != zoomButton && event.button != panButton)
+
+    const svgDraw = getEl("svg_draw_"+elementId);
+    if(event.button == zoomButton)
+        svgDraw.style.cursor = "zoom-in";
+    else if(event.button == panButton)
+        svgDraw.style.cursor = "grab";
+    else 
         return;
 
-    // else start zoom
     const svg = getEl("svg_"+elementId);
-
+    // else start zoom
     const x = event.offsetX;
     const y = event.offsetY;
     const rect = addSvgRec(svg, x, y, 0, 0, "black");
@@ -430,6 +435,8 @@ function plotDrawZoom(event, elementId, x0, y0) {
 function plotZoom(elementId, rlim, grid, minorGrid, logScale) {
     const rectZoom = getEl("zoom_rect"+elementId);
     const svg = getEl("svg_"+elementId);
+    const svgDraw = getEl("svg_draw_"+elementId);
+    svgDraw.style.cursor = "crosshair";
     svg.onmousemove = null; // disable move event to aovid unnessary callbacks
     if(rectZoom == null)
         return;
@@ -440,7 +447,6 @@ function plotZoom(elementId, rlim, grid, minorGrid, logScale) {
     if(~isPan && (rec[2] == 0 || rec[3] == 0))
         return;
 
-    const svgDraw = getEl("svg_draw_"+elementId);
     const vb = view(svgDraw);
 
     const pltAr = size(svgDraw);
@@ -467,7 +473,9 @@ function setAxesLim(elementId, lim, renderLim, grid, minorGrid, logScale){
 
     // shift plot-area rectangle to new viewbox
     const plr = getEl("plr_"+elementId);
-    addSvgEl(null, plr, {'x':shiftX, 'y':shiftY});
+    const cpr = getEl("cpr_"+elementId);
+    addSvgEl(null, plr, {"x":shiftX, "y":shiftY});
+    addSvgEl(null, cpr, {"x":shiftX, "y":shiftY});
 
     // remove old grid before creating a new one
     const gridEl = document.getElementsByClassName("cg_"+elementId);
@@ -550,7 +558,7 @@ function createGrid(elementId, lim, grid, minorGrid, logScale){
                 minorTickPos = logspace(1, (9/(nMinorTicks-1)), 10);
                 minorTickPos.forEach((value, index) => {minorTickPos[index] = (minorTickPos[index])*dTick});
             } else {
-                minorTickPos = linspace(0, (1/nMinorTicks)*dTick, dTick);
+                minorTickPos = linspace(0, (2/nMinorTicks)*dTick, dTick);
             };
             
             for(let idx = 1; idx < minorTickPos.length-1; ++idx) {
@@ -715,9 +723,9 @@ function plotSvg(elementId, x, y, numLines,
    
     let hLegendMargin = 0;
     let hLegendItems = 0;
+    let legFill = "";
     if(legend.length>0 && numLines > 0 && x.length > 0) {  
-        // set legend dimensions depending on location
-        let legFill = "";
+        // set legend dimensions depending on location        
         switch(legendLocation) {
             case 'northeast':
                 yLegend = pltArYOffset + 2*legendYSpacing;
@@ -864,19 +872,20 @@ function plotSvg(elementId, x, y, numLines,
     let pltLim = [xlims[0], ylims[0], xlims[1]-xlims[0],ylims[1]-ylims[0]];
 
     //////////////////////////////
-    // create clip path for plotting area
+    // plotting area
     //////////////////////////////   
     // background SVG used for ticks and grid
-    const svgBg = addSvgEl(svg, "svg", {"id":"svg_bg_"+elementId, "preserveAspectRatio":"none",
+    addSvgEl(svg, "svg", {"id":"svg_bg_"+elementId, "preserveAspectRatio":"none",
             "viewBox":"0 0 100 100", 
             "width":pltAr[2], "height":pltAr[3], 
             "x":pltAr[0], "y":pltAr[1]});
 
     const svgDraw = addSvgEl(svg, "svg", {"id":"svg_draw_"+elementId, "preserveAspectRatio":"none",
-        "viewBox":"0 0 100 100", 
+        "viewBox":"0 0 100 100", "overflow":"visible",
         "width":pltAr[2], "height":pltAr[3], 
         "x":pltAr[0], "y":pltAr[1]});
-
+    
+    svgDraw.style.cursor = "crosshair";
     ////////////////////////////
     // Draw grid and labels
     ////////////////////////////
@@ -921,7 +930,10 @@ function plotSvg(elementId, x, y, numLines,
     if(!varX && (numPtPerLine != x.length))
         throw new Error("Dimension must agree");
 
-    const gp = addSvgEl(svgDraw, "g", {"id":"gp_"+elementId});
+    const clipDraw = addSvgEl(svgDraw, "clipPath", {"id":"cpg_"+elementId});
+    const clipRec = addSvgRec(clipDraw, 0, 0, "100%", "100%");
+    addSvgEl(null, clipRec, {"id":"cpr_"+elementId});
+    const gp = addSvgEl(svgDraw, "g", {"id":"gp_"+elementId, "clip-path":"url(#cpg_" + elementId + ")" });
     for(let lnIdx = 0; lnIdx < numLines; ++lnIdx) {
         const colorIdx = lnIdx % colorMapRGB.length;
         const poly = addSvgEl(gp, "polyline", {"class": "l",  "id": "pl_" +elementId+"_"+lnIdx,
@@ -944,16 +956,16 @@ function plotSvg(elementId, x, y, numLines,
     //////////////////////////////
     // create drawing area
     //////////////////////////////
-    const plRec = addSvgRec(svgDraw, 0, 0, "100%", "100%", "none", "black");
+    const plRec = addSvgRec(svgDraw, 0, 0, "100%", "100%", "none", "black", 1);
     addSvgEl(null, plRec, {"id":"plr_"+elementId,"pointer-events": "visible"});
 
-    // add legend last to be in front os drawing
-    //svg.appendChild(gleg); 
-    svg.appendChild(gleg); 
+    // add legend last to be in front fs drawing
+    if(legFill=="white")
+        svg.appendChild(gleg); 
     
 
     // draw download button
-    const downloadBtn = addSvgEl(svgTop, "g", {"id":"bd_"+elementId, "transform":"translate(" + (pltAr[2] - 16) +" "+ (pltAr[1] - 24) + ")", 
+    const downloadBtn = addSvgEl(svgTop, "g", {"id":"bd_"+elementId, "transform":"translate(" + (pltAr[2] - 18) +" "+ (pltAr[1] - 24) + ")", 
         "stroke-width":2,"stroke-linecap":"round", "stroke-linejoin":"round","class":"b", "pointer-events": "visible"});
     addSvgEl(downloadBtn, "polyline", {"stroke":"black", "fill":"none","points":"8,0 8,16 2,9 8,16 14,9"});
     addSvgEl(downloadBtn, "polyline", {"stroke":"black", "fill":"none","points":"0,17 0,20 16,20 16,17"});

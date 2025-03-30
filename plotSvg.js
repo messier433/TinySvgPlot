@@ -135,9 +135,9 @@ function addSvgTxt(parent, text, x, y, fontsize, textanchor = "middle", fontfami
     textEl.append(document.createTextNode(text));              
     return textEl;
 }
-function addSvgLn(parent, x1, y1, x2,y2, stroke="black", strokedasharray="") {
+function addSvgLn(parent, x1, y1, x2,y2, stroke="black", strokedasharray="", stroke_width=1) {
     return addSvgEl(parent, "line", {"x1":x1, "y1":y1,"x2":x2, "y2":y2,
-            "stroke":stroke, "stroke-width": 1, "stroke-dasharray": strokedasharray, "vector-effect":"non-scaling-stroke"
+            "stroke":stroke, "stroke-width": stroke_width, "stroke-dasharray": strokedasharray, "vector-effect":"non-scaling-stroke"
     });  
 };
 
@@ -187,7 +187,7 @@ function legClicked(event, fontsize, ySpacing, elementId, numLines) {
 
 function updateMarkerPos(elementId) {
     const svgDraw = getEl("svg_draw_"+elementId);
-    const tooltips = document.getElementsByClassName("tooltip_" + elementId);
+    const tooltips = document.getElementsByClassName("marker_" + elementId);
     // update tooltip location which refers to top SVG and not scaled with drawing SVG
     for(let idx = 0; idx<tooltips.length; ++idx) {
         const svgSz = size(svgDraw);
@@ -260,6 +260,7 @@ function scrollLegend(event, elementId, hLegendItems){
 function plotClicked(event, elementId, pltLim, grid, minorGrid, logScale) {
 
     const svgDraw = getEl("svg_draw_"+elementId);
+
     //const svg = getEl("svg_"+elementId);
 
     //else
@@ -284,7 +285,7 @@ function plotClicked(event, elementId, pltLim, grid, minorGrid, logScale) {
 
     const prefix = "pl_" + elementId;
     const lnId = closestEl.id;
-    const lnIdx = lnId.slice(prefix.length, lnId.length);
+    const lnIdx = lnId.slice(prefix.length, lnId.length); // substring includes "_"
     const legendItem = getEl("lti_"+elementId+lnIdx);
     const plotLine = getEl("pl_"+elementId+lnIdx);
     const lineColor = getAttr(plotLine, "stroke");
@@ -294,7 +295,7 @@ function plotClicked(event, elementId, pltLim, grid, minorGrid, logScale) {
         //gl = addSvgEl(svg, "g", {"id":"gpl_" + elementId+lnIdx});
         gl = addSvgEl(svgDraw, "g", {"id":"gpl_" + elementId+lnIdx});
     }
-    const tooltip = addSvgEl(gl, "g", {"class":"tooltip_"+elementId, 
+    const tooltip = addSvgEl(gl, "g", {"class":"marker_"+elementId, 
         "transform":"translate(" + intX + " " + intY + ")" + " scale("+scaleX + " "+ scaleY + ")"
         //"transform":"translate(" + topX + " " + topY + ")"
     });
@@ -549,8 +550,8 @@ function createGrid(elementId, lim, grid, minorGrid, logScale){
         const dTick = 100 * tick/lim[2+axIdx]; 
 
         // axis labels and grid
-        const defs =  addSvgEl(svgBg, "defs", {"class":"cg_" +elementId});
-        const defsg =  addSvgEl(defs, "g", {"id": "mg" + axIdx + "_" + elementId});
+        const defsBg =  addSvgEl(svgBg, "defs", {"class":"cg_" +elementId});
+        const defsg =  addSvgEl(defsBg, "g", {"id": "mg" + axIdx + "_" + elementId});
         const nMinorTicks = (logScale[axIdx] || minorGrid[axIdx]) ?  nMinorTicksMax[axIdx] : 0;
         if(nMinorTicks > 0) {
             let minorTickPos = Array();
@@ -615,9 +616,22 @@ function downloadSvg(elementId, title) {
     button.style.display = "block";
 }
 
+function addMarker(defs, elementId, id, elements) {
+    //"o","+", "*", ".", "x", "_", "|", "sq"
+    const marker = addSvgEl(defs, "marker", {"id":id,
+        "markerWidth":"10", "markerHeight":"10", "refX":"5", "refY":"5",
+        "markerUnits":"userSpaceOnUse", "fill":"none","stroke":"context-stroke"});
+    const markerGrp = addSvgEl(marker, "g", {
+        "stroke-width":1.5,"vector-effect":"non-scaling-stroke",
+        "class":"marker_" + elementId, "transform":"translate(5 5) scale(1 1)"});
+
+    for(let idx = 0; idx < elements.length; ++idx)
+        markerGrp.appendChild(elements[idx]);
+}
+
 function plotSvg(elementId, x, y, numLines, 
 {title = "", subtitle = "", xlabel = "", ylabel="", xlim=[], ylim=[], 
-    legend = [], xScale = "lin", yScale = "lin", grid = true, 
+    style="-", marker="", legend = [], xScale = "lin", yScale = "lin", grid = true, 
     gridMinor = [], legendLocation = 'northeastoutside'
 }={}
 )
@@ -745,9 +759,10 @@ function plotSvg(elementId, x, y, numLines,
         svg.appendChild(gleg);     
         
         // define legend line        
-        const defsll = addSvgEl(svg, "defs");
-        addSvgEl(defsll, "line", {"id":"ll_"+elementId, "x1":0, "y1":0,"x2":legendLineLength,"y2":0, 
+        const defs = addSvgEl(svg, "defs");
+        addSvgEl(defs, "line", {"id":"ll_"+elementId, "x1":0, "y1":0,"x2":legendLineLength,"y2":0, 
             "stroke-width":2,"vector-effect":"non-scaling-stroke"});
+
                 
         // draw legend box (change width later)
         const svgLeg = addSvgEl(gleg, "svg", {"id":"svg_leg_"+elementId});
@@ -885,6 +900,7 @@ function plotSvg(elementId, x, y, numLines,
         "width":pltAr[2], "height":pltAr[3], 
         "x":pltAr[0], "y":pltAr[1]});
     
+
     svgDraw.style.cursor = "crosshair";
     ////////////////////////////
     // Draw grid and labels
@@ -925,6 +941,25 @@ function plotSvg(elementId, x, y, numLines,
     //////////////////////////////
     // create polylines
     //////////////////////////////
+    // define markers
+    const defsDraw = addSvgEl(svgDraw, "defs");
+    if(marker != "") {
+        //"o","+", "*", ".", "x", "_", "|", "sq"
+        addMarker(defsDraw, elementId, "mo", [addSvgEl(null, "circle", {"r":"5"})]);
+        addMarker(defsDraw, elementId, "m+", [addSvgLn(null, 0, -5, 0, 5, "", "", ""), addSvgLn(null, -5, 0, 5, 0, "", "", "")]);
+        addMarker(defsDraw, elementId, "m*", [addSvgLn(null, 0, -5, 0, 5, "", "", ""), addSvgLn(null, -5, 0, 5, 0, "", "", ""),
+                                              addSvgLn(null, -3.5, -3.5, 3.5, 3.5, "", "", ""), addSvgLn(null, -3.5, 3.5, 3.5, -3.5, "", "", "")]);
+        addMarker(defsDraw, elementId, "m.", [addSvgEl(null, "circle", {"r":"2", "stroke-width":2})]);
+        addMarker(defsDraw, elementId, "mx", [addSvgLn(null, -3.5, -3.5, 3.5, 3.5, "","",""), addSvgLn(null, -3.5, 3.5, 3.5, -3.5, "","","")]);
+        addMarker(defsDraw, elementId, "m_", [addSvgLn(null, -5, 0, 5, 0, "","","")]);
+        addMarker(defsDraw, elementId, "m|", [addSvgLn(null, 0, -5, 0, 5, "","","")]);
+        addMarker(defsDraw, elementId, "msq", [addSvgRec(null,-5,-5,10,10,"", "", "")]);
+        addMarker(defsDraw, elementId, "m^", [addSvgEl(null, "polygon", {"points":"-5 3, 0 -5, 5 3"})]);
+        addMarker(defsDraw, elementId, "mv", [addSvgEl(null, "polygon", {"points":"-5 -4, 0 5, 5 -4"})]);
+        addMarker(defsDraw, elementId, "m\>", [addSvgEl(null, "polygon", {"points":"-3 -5, 5 0, -3 5"})]);
+        addMarker(defsDraw, elementId, "m\<", [addSvgEl(null, "polygon", {"points":"-5 0, 3 5, 3 -5"})]);
+    }
+
     let numPtPerLine = y.length / numLines;
     let varX = x.length == y.length;
     if(!varX && (numPtPerLine != x.length))
@@ -936,8 +971,23 @@ function plotSvg(elementId, x, y, numLines,
     const gp = addSvgEl(svgDraw, "g", {"id":"gp_"+elementId, "clip-path":"url(#cpg_" + elementId + ")" });
     for(let lnIdx = 0; lnIdx < numLines; ++lnIdx) {
         const colorIdx = lnIdx % colorMapRGB.length;
+        const dashStyle = Array.isArray(style) ? style[lnIdx] : style;
+        const markerStyle = "url(#m" + (Array.isArray(marker) ? marker[lnIdx] : marker) + ")";  
+        let dashStr = "";
+        switch(dashStyle) {            
+            case ":":
+                dashStr = "2 3";
+                break;
+            case "--":
+                dashStr = "12 6";
+                break;
+            case "-.":
+                dashStr = "9 3 3 3";
+        }
         const poly = addSvgEl(gp, "polyline", {"class": "l",  "id": "pl_" +elementId+"_"+lnIdx,
-            "stroke": colorMapRGB[colorIdx]});
+            "stroke": colorMapRGB[colorIdx], "stroke-dasharray": dashStr, 
+            "marker-start":markerStyle, "marker-mid":markerStyle, "marker-end":markerStyle
+        });
         //poly.setAttribute("shape-rendering","optimizeSpeed ");
 
         for(let ptIdx = 0; ptIdx < numPtPerLine; ++ptIdx) {
@@ -959,6 +1009,7 @@ function plotSvg(elementId, x, y, numLines,
     const plRec = addSvgRec(svgDraw, 0, 0, "100%", "100%", "none", "black", 1);
     addSvgEl(null, plRec, {"id":"plr_"+elementId,"pointer-events": "visible"});
 
+   
     // add legend last to be in front fs drawing
     if(legFill=="white")
         svg.appendChild(gleg); 

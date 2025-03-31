@@ -30,6 +30,8 @@ Optional parameters:
  - ylabel: String that defines the label on the left of the y-axes
  - xScale: String that defines the scaling of the x-axes. Valid options: "log", "lin" (default)
  - yScale: String that defines the scaling of the y-axes. Valid options: "log", "lin" (default)
+ - grid: Boolean to enable grid lines for x and y-axes. In case of log-scale this automatically enables also minor-grid lines
+ - gridMinor: Scalar or 2 value Boolean array to enable minor grid lines for x- and/or y-axes
  - style: String or string-array the defines the type of each line.<br />
    Valid options:<br />
    ":" dotted<br />

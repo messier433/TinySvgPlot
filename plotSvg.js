@@ -11,6 +11,7 @@ const round = Math.round;
 const floor = Math.floor;
 const log10 = Math.log10;
 const ceil = Math.ceil;
+const doc =document;
 
 const zoomButton = 2; // 0 is left mouse button; 1: middle mouse button; 2: right mouse button (recommended)
 const panButton = 1; // 0 is left mouse button; 1: middle mouse button (recommended); 2: right mouse button
@@ -36,7 +37,7 @@ const colorMapRGB =  ["rgb(0,114,190)", "rgb(218,83,25)", "rgb(238,178,32)",
 const ns = "http://www.w3.org/2000/svg";
 
 function getEl(id){
-    return document.getElementById(id);
+    return doc.getElementById(id);
 };
 function setAttr(obj, field, val) {
     obj.setAttribute(field, val);
@@ -52,6 +53,11 @@ function view(element) {
     return [element.viewBox.baseVal.x, element.viewBox.baseVal.y, 
         element.viewBox.baseVal.width, element.viewBox.baseVal.height];
 };
+function transform(element, translate, scale){
+    let str = (translate!=null) ? "translate("+translate[0]+" "+translate[1]+")" : "";
+    str += (scale!=null) ? "scale("+scale[0]+" "+scale[1]+")" : "";
+    element.setAttribute("transform", str);
+}
 
 function setLim(vals, lim) {
     if(lim.length < 2) {
@@ -117,7 +123,7 @@ function decades(start, increment, stop) {
 
 function addSvgEl(parent, ele, attrs) {
     //create the element with a specified string:
-    const element = (typeof ele == "string") ? document.createElementNS(ns, ele) : ele;
+    const element = (typeof ele == "string") ? doc.createElementNS(ns, ele) : ele;
     //create a for...in loop set attributes:
     for (let val in attrs) {
         setAttr(element, val, attrs[val]);        
@@ -132,7 +138,7 @@ function addSvgTxt(parent, text, x, y, fontsize, textanchor = "middle", fontfami
             "fill":fill, "font-size":fontsize, "text-anchor":textanchor, "font-family":fontfamily,
             "stroke-width": 1
             });
-    textEl.append(document.createTextNode(text));              
+    textEl.append(doc.createTextNode(text));              
     return textEl;
 }
 function addSvgLn(parent, x1, y1, x2,y2, stroke="black", strokedasharray="", stroke_width=1) {
@@ -187,7 +193,7 @@ function legClicked(event, fontsize, ySpacing, elementId, numLines) {
 
 function updateMarkerPos(elementId) {
     const svgDraw = getEl("svg_draw_"+elementId);
-    const tooltips = document.getElementsByClassName("marker_" + elementId);
+    const tooltips = doc.getElementsByClassName("marker_" + elementId);
     // update tooltip location which refers to top SVG and not scaled with drawing SVG
     for(let idx = 0; idx<tooltips.length; ++idx) {
         const svgSz = size(svgDraw);
@@ -205,7 +211,7 @@ function resizeSvg(elementId, padX, padY, hLegendItems, hLegendMargin) {
     const svgDraw = getEl("svg_draw_"+elementId);
     const svgBg = getEl("svg_bg_"+elementId);
     const svgTop = getEl("svg_top_"+elementId);
-    const svgBottom = getEl("svg_bottom_"+elementId);
+    const svgBottom = getEl("svg_btm_"+elementId);
     const svgLeft = getEl("svg_left_"+elementId);
     const svg = getEl("svg_"+elementId);
     const button = getEl("bd_"+elementId);
@@ -294,10 +300,8 @@ function plotClicked(event, elementId, pltLim, grid, minorGrid, logScale) {
         //gl = addSvgEl(svg, "g", {"id":"gpl_" + elementId+lnIdx});
         gl = addSvgEl(svgDraw, "g", {"id":"gpl_" + elementId+lnIdx});
     }
-    const tooltip = addSvgEl(gl, "g", {"class":"marker_"+elementId, 
-        "transform":"translate(" + intX + " " + intY + ")" + " scale("+scaleX + " "+ scaleY + ")"
-        //"transform":"translate(" + topX + " " + topY + ")"
-    });
+    const tooltip = addSvgEl(gl, "g", {"class":"marker_"+elementId});
+    transform(tooltip, [intX,intY], [scaleX, scaleY]);
     const rect = addSvgRec(tooltip, 5, -9, 0, 32, lineColor, "rgb(223,223,223)", 1, rx=4);
     
     tooltip.onclick = (event) => {
@@ -478,7 +482,7 @@ function setAxesLim(elementId, lim, renderLim, grid, minorGrid, logScale){
     addSvgEl(null, cpr, {"x":shiftX, "y":shiftY});
 
     // remove old grid before creating a new one
-    const gridEl = document.getElementsByClassName("cg_"+elementId);
+    const gridEl = doc.getElementsByClassName("cg_"+elementId);
     while (gridEl.length > 0) gridEl[0].remove();    
 
     createGrid(elementId, lim, grid, minorGrid, logScale);
@@ -518,7 +522,7 @@ function calcTick(range, nTicks, logScale)
 function createGrid(elementId, lim, grid, minorGrid, logScale){    
     const svgBg = getEl("svg_bg_"+elementId);
     const svgLeft = getEl("svg_left_"+elementId);
-    const svgBottom = getEl("svg_bottom_"+elementId);
+    const svgBottom = getEl("svg_btm_"+elementId);
     
     for(let axIdx = 0; axIdx<2;++axIdx){
         const svgAx = (axIdx > 0) ? svgLeft : svgBottom; 
@@ -595,10 +599,10 @@ function addTickLines(parent, elementId, offset, grid, axIdx, tickLength, dash){
     if(grid) addSvgLn(parent, x[0], x[1], x[4], x[5], "rgb(223,223,223)", dash);
     const startTick = addSvgLn(parent, 0,0, x[2], x[3]);
     const endTick = addSvgLn(parent, -x[2], -x[3], 0, 0);
-    addSvgEl(null, startTick, { "transform":"translate("+x[0]+" "+x[1]+") scale(1 1)",
-        "class":"marker_" + elementId});
-    addSvgEl(null, endTick, { "transform":"translate("+x[4]+" "+x[5]+") scale(1 1)",
-        "class":"marker_" + elementId});
+    transform(startTick, [x[0],x[1]], [1, 1]);
+    transform(endTick, [x[4],x[5]], [1, 1]);
+    addSvgEl(null, startTick, {"class":"marker_" + elementId});
+    addSvgEl(null, endTick, { "class":"marker_" + elementId});
         
 }
 
@@ -610,12 +614,12 @@ function downloadSvg(elementId, title) {
     const outerStr = "\<svg width=\"" + svgSz[2] + "\" height=\""+svgSz[3]+"\" xmlns=\""+ns+"\"\>";
     const svgBlob = new Blob([outerStr, svg.innerHTML, "\</svg\>"], {type:"image/svg+xml;charset=utf-8"});
     const svgUrl = URL.createObjectURL(svgBlob);
-    const downloadLink = document.createElement("a");
+    const downloadLink = doc.createElement("a");
     downloadLink.href = svgUrl;
     downloadLink.download = "snapshot_"+title +".svg";
-    document.body.appendChild(downloadLink);
+    doc.body.appendChild(downloadLink);
     downloadLink.click();
-    document.body.removeChild(downloadLink);
+    doc.body.removeChild(downloadLink);
     button.style.display = "block";
 }
 
@@ -626,7 +630,8 @@ function addMarker(defs, elementId, id, elements) {
         "markerUnits":"userSpaceOnUse", "fill":"none","stroke":"context-stroke"});
     const markerGrp = addSvgEl(marker, "g", {
         "stroke-width":1.5,"vector-effect":"non-scaling-stroke",
-        "class":"marker_" + elementId, "transform":"translate(5 5) scale(1 1)"});
+        "class":"marker_" + elementId});
+    transform(markerGrp, [5,5], [1,1]);
 
     for(let idx = 0; idx < elements.length; ++idx)
         markerGrp.appendChild(elements[idx]);
@@ -672,7 +677,7 @@ function plotSvg(elementId, x, y, numLines,
     };
 
     const el = getEl(elementId);
-    const mainDiv = document.createElement("div");
+    const mainDiv = doc.createElement("div");
     el.appendChild(mainDiv);
     //mainDiv.setAttribute( "style", "width:100%;height:calc(100vh - 4px);overflow:none");  
     setAttr(mainDiv, "style", "width:100%;height:100%;min-width:"+
@@ -802,7 +807,7 @@ function plotSvg(elementId, x, y, numLines,
             if(lnIdx < legendTmp.length) {
                 str = legendTmp[lnIdx];
             };
-            textEl.append(document.createTextNode(str));  
+            textEl.append(doc.createTextNode(str));  
         }
 
         let bbox = gleg.getBBox();
@@ -862,8 +867,9 @@ function plotSvg(elementId, x, y, numLines,
     // draw xlabel
     ///////////////////////////////
     let gBottomShift = -svgSz[3] + pltAr[1] + pltAr[3];
-    const gBottom = addSvgEl(svg, "g", {"transform":"translate(" + pltAr[0]  + " " + gBottomShift + ")"});
-    const svgBottom = addSvgEl(gBottom, "svg", {"id":"svg_bottom_"+elementId, "overflow":"visible","y":"100%", "width":pltAr[2]});
+    const gBottom = addSvgEl(svg, "g");
+    transform(gBottom, [pltAr[0], gBottomShift ]);
+    const svgBottom = addSvgEl(gBottom, "svg", {"id":"svg_btm_"+elementId, "overflow":"visible","y":"100%", "width":pltAr[2]});
     if(xlabel.length>0) {
         //addSvgTxt(svg, xlabel,"50%", pltAr[1] + pltAr[3] + axesLblFontSize*2.4 + fontSpacing, axesLblFontSize);
         addSvgTxt(svgBottom, xlabel,"50%", axesLblFontSize*3, axesLblFontSize);
@@ -878,7 +884,7 @@ function plotSvg(elementId, x, y, numLines,
         "fill":"black", "font-size":axesLblFontSize, "text-anchor":"middle", 
         "font-family":"Sans,Arial", "stroke-width": 1, "y":"50%", "x":(pltAr[0] - axesLblFontSize*4 - fontSpacing) 
         });  
-        text.append(document.createTextNode(ylabel));
+        text.append(doc.createTextNode(ylabel));
     };
 
     ///////////////////////////////
@@ -1019,8 +1025,9 @@ function plotSvg(elementId, x, y, numLines,
     
 
     // draw download button
-    const downloadBtn = addSvgEl(svgTop, "g", {"id":"bd_"+elementId, "transform":"translate(" + (pltAr[2] - 18) +" "+ (pltAr[1] - 24) + ")", 
+    const downloadBtn = addSvgEl(svgTop, "g", {"id":"bd_"+elementId, 
         "stroke-width":2,"stroke-linecap":"round", "stroke-linejoin":"round","class":"b", "pointer-events": "visible"});
+    transform(downloadBtn, [(pltAr[2] - 18), (pltAr[1] - 24)]);
     addSvgEl(downloadBtn, "polyline", {"stroke":"black", "fill":"none","points":"8,0 8,16 2,9 8,16 14,9"});
     addSvgEl(downloadBtn, "polyline", {"stroke":"black", "fill":"none","points":"0,17 0,20 16,20 16,17"});
     addSvgRec(downloadBtn, 0, 0, 21, 21)

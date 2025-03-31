@@ -689,11 +689,6 @@ function plotSvg(elementId, x, y, numLines,
     // write styles
     svg.innerHTML += "\<style\>\n" +
         "\<![CDATA[\n" + 
-        "polyline.l {\n" + 
-        "stroke-width:2;\n" + 
-        "vector-effect:non-scaling-stroke;\n" + 
-        "fill:none;\n" +
-        "}\n" + 
         "text.cll {\n" + 
         "font-size:"+legendFontSize+"px;\n" + 
         "fill:black;\n" + 
@@ -983,6 +978,7 @@ function plotSvg(elementId, x, y, numLines,
         const dashStyle = Array.isArray(style) ? style[lnIdx] : style;
         const markerStyle = "url(#m" + (Array.isArray(marker) ? marker[lnIdx] : marker) + ")";  
         let dashStr = "";
+        let strokeWidth = 2;
         switch(dashStyle) {            
             case ":":
                 dashStr = "2 3";
@@ -992,10 +988,16 @@ function plotSvg(elementId, x, y, numLines,
                 break;
             case "-.":
                 dashStr = "9 3 3 3";
+                break;
+            case "*":
+                strokeWidth = 0;
         }
+
+
         const poly = addSvgEl(gp, "polyline", {"class": "l",  "id": "pl_" +elementId+"_"+lnIdx,
-            "stroke": colorMapRGB[colorIdx], "stroke-dasharray": dashStr, 
-            "marker-start":markerStyle, "marker-mid":markerStyle, "marker-end":markerStyle
+            "stroke": colorMapRGB[colorIdx], "stroke-dasharray": dashStr,
+            "marker-start":markerStyle, "marker-mid":markerStyle, "marker-end":markerStyle, 
+            "stroke-width":strokeWidth, "vector-effect":"non-scaling-stroke", "fill":"none"
         });
         //poly.setAttribute("shape-rendering","optimizeSpeed ");
 

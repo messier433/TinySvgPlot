@@ -21,7 +21,7 @@ Supported interactions:
 - download generated SVG
 
 Function call:
-  plotSvg(ID, x, y, numLines, optParam);
+plotSvg(ID, x, y, numLines, optParam);
 
 Optional parameters:
  - title: String that defines the main title on top of plot area 
@@ -30,31 +30,31 @@ Optional parameters:
  - ylabel: String that defines the label on the left of the y-axes
  - xScale: String that defines the scaling of the x-axes. Valid options: "log", "lin" (default)
  - yScale: String that defines the scaling of the x-axes. Valid options: "log", "lin" (default)
- - style: String or string-array the defines the type of each line.
-   Valid options:
-   ":" dotted
-   "--" solid line
-   "-." dash-dot
-   "*" no-line (marker to be defined for scatter plots
- - marker: String or string-array the defines the type of markers used for each line.
-   Valid option:
-   "" No markers
-   "o" Circle
-   "+" Cross
-   "*" Star
-   "." Dot
-   "x" X
-   "_" Horizontal line
-   "|" Vertical Line
-   "sq" Square
-   "^" Triangle pointing up
-   "v" Triangle pointing down
-   "\>" Triangle pointing right
-   "\<" Triangle pointing left
+ - style: String or string-array the defines the type of each line.<br />
+   Valid options:<br />
+   ":" dotted<br />
+   "--" solid line<br />
+   "-." dash-dot<br />
+   "*" no-line (marker to be defined for scatter plots<br />
+ - marker: String or string-array the defines the type of markers used for each line.<br />
+   Valid option: <br />
+   "" No markers<br />
+   "o" Circle<br />
+   "+" Cross<br />
+   "*" Star<br />
+   "." Dot<br />
+   "x" X<br />
+   "_" Horizontal line<br />
+   "|" Vertical Line<br />
+   "sq" Square<br />
+   "^" Triangle pointing up<br />
+   "v" Triangle pointing down<br />
+   "\>" Triangle pointing right<br />
+   "\<" Triangle pointing left<br />
  - xlim: length-2 array that defines min and max range of x-axes
  - ylim: length-2 array that defines min and max range of y-axes
  - legend: String array that defines the legend names for each line
- - legendLocation: String that defines the location of the legend
-   Allowed values:
-   "northeastoutside" On the right side next to the plot area
-   "northeast" Inside the plot area
+ - legendLocation: String that defines the location of the legend<br />
+   Allowed values:<br />
+   "northeastoutside" On the right side next to the plot area<br />
+   "northeast" Inside the plot area<br />

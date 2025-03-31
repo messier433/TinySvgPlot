@@ -263,7 +263,7 @@ function scrollLegend(event, elementId, hLegendItems){
     return false;
 }
 
-function plotClicked(event, elementId, pltLim, grid, minorGrid, logScale) {
+function plotClicked(event, elementId, pltLim, grid, minorGrid, logScale, freeTool) {
     const svgDraw = getEl("svg_draw_"+elementId);
 
     //const svg = getEl("svg_"+elementId);
@@ -278,7 +278,7 @@ function plotClicked(event, elementId, pltLim, grid, minorGrid, logScale) {
     const dSnap = 6;
     const detX = dSnap * scaleX;
     const detY = dSnap * scaleY;
-    result = getNearestLine(elementId, plotX, plotY, detX, detY);
+    result = getNearestLine(elementId, plotX, plotY, detX, detY, freeTool);
     const closestEl = result.ele;
     if(closestEl == null)
         return;
@@ -341,7 +341,7 @@ function convertCoord(point, pltLim, logScale) {
 }
 
 // find a nearest line within 'proximity'
-function getNearestLine(elementId, Cx, Cy, dx, dy) {
+function getNearestLine(elementId, Cx, Cy, dx, dy, freeTool) {
     let closestEl = null;
     let closestDist = Infinity;
     let closestXproj = 0;
@@ -351,7 +351,8 @@ function getNearestLine(elementId, Cx, Cy, dx, dy) {
     const nLines = polylines.children.length;
 
     for(let idx = 0; idx < nLines; ++idx) {
-        const pts = polylines.children[idx].points;
+        const line = polylines.children[idx];
+        const pts = line.points;
         for(let idxPt = 1; idxPt < pts.length;++idxPt) {
             const ptA = pts[idxPt-1];
             const ptB = pts[idxPt];
@@ -375,7 +376,7 @@ function getNearestLine(elementId, Cx, Cy, dx, dy) {
                 continue;
 
             closestDist = dist;
-            closestEl = polylines.children[idx];
+            closestEl = line;
             const dCAx = (Cx > ptA.x) ? Cx - ptA.x : ptA.x - Cx;
             const dCAy = (Cy > ptA.y) ? Cy - ptA.y : ptA.y - Cy;
             const dCBx = (Cx > ptB.x) ? Cx - ptB.x : ptB.x - Cx;
@@ -387,13 +388,14 @@ function getNearestLine(elementId, Cx, Cy, dx, dy) {
             } else if((dCBx < dx) && (dCBy < dy) ) {
                 closestXproj = ptB.x;
                 closestYproj = ptB.y;
-            } else {
+            } else if(freeTool && getAttr(line, "stroke-width")!= 0) {
                 closestXproj = xproj;
                 closestYproj = yproj;
+            } else {
+                closestEl = null;
             };          
         };
     };
-
     return {"ele": closestEl, "x":closestXproj, "y":closestYproj};
 }
 
@@ -640,7 +642,7 @@ function addMarker(defs, elementId, id, elements) {
 function plotSvg(elementId, x, y, numLines, 
 {title = "", subtitle = "", xlabel = "", ylabel="", xlim=[], ylim=[], 
     style="-", marker="", legend = [], xScale = "lin", yScale = "lin", grid = true, 
-    gridMinor = [], legendLocation = 'northeastoutside'
+    gridMinor = [], legendLocation = 'northeastoutside', freeTool = true 
 }={}
 )
 {      
@@ -1036,7 +1038,7 @@ function plotSvg(elementId, x, y, numLines,
     downloadBtn.onclick = () => {downloadSvg(elementId, title)};
 
     // add event callbacks
-    plRec.onclick = (event) => plotClicked(event, elementId, pltLim, grid, gridMinorSet, logScale)
+    plRec.onclick = (event) => plotClicked(event, elementId, pltLim, grid, gridMinorSet, logScale, freeTool)
     svg.oncontextmenu = (event) => {event.preventDefault()}; // prevent context menu during zoom
     svgDraw.onmousedown = (event) => plotMouseDown(event, elementId);
     svgDraw.ondblclick = () => setAxesLim(elementId, pltLim, pltLim, grid, gridMinorSet, logScale);

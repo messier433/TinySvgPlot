@@ -11,6 +11,7 @@ const round = Math.round;
 const floor = Math.floor;
 const log10 = Math.log10;
 const ceil = Math.ceil;
+const Inf = Infinity;
 const doc =document;
 
 const zoomButton = 2; // 0 is left mouse button; 1: middle mouse button; 2: right mouse button (recommended)
@@ -62,8 +63,8 @@ function transform(element, translate, scale){
 function setLim(vals, lim) {
     if(lim.length < 2) {
         let len = vals.length;
-        let max = -Infinity;
-        let min = Infinity;
+        let max = -Inf;
+        let min = Inf;
         while (len--) {
             if(isFinite(vals[len])) {
                 min = (vals[len] < min) ? vals[len] : min;
@@ -343,7 +344,7 @@ function convertCoord(point, pltLim, logScale) {
 // find a nearest line within 'proximity'
 function getNearestLine(elementId, Cx, Cy, dx, dy, freeTool) {
     let closestEl = null;
-    let closestDist = Infinity;
+    let closestDist = Inf;
     let closestXproj = 0;
     let closestYproj = 0;
 
@@ -625,9 +626,9 @@ function downloadSvg(elementId, title) {
     button.style.display = "block";
 }
 
-function addMarker(defs, elementId, id, elements) {
+function addMarker(defs, elementId, id, elements, addSolid=0) {
     //"o","+", "*", ".", "x", "_", "|", "sq"
-    const marker = addSvgEl(defs, "marker", {"id":id,
+    const marker = addSvgEl(defs, "marker", {"id":"m"+id,
         "markerWidth":"10", "markerHeight":"10", "refX":"5", "refY":"5",
         "markerUnits":"userSpaceOnUse", "fill":"none","stroke":"context-stroke"});
     const markerGrp = addSvgEl(marker, "g", {
@@ -637,6 +638,9 @@ function addMarker(defs, elementId, id, elements) {
 
     for(let idx = 0; idx < elements.length; ++idx)
         markerGrp.appendChild(elements[idx]);
+
+    // copy but fill
+    if(addSolid) addSvgEl(defs, marker.cloneNode(true), {"id":"mf"+id, "fill":"context-stroke"});
 }
 
 function plotSvg(elementId, x, y, numLines, 
@@ -656,8 +660,8 @@ function plotSvg(elementId, x, y, numLines,
             if (isNaN(xlim[0]) || isNaN(xlim[1])) {
                 xlim = [];
             } else {
-                xlim[0] =  (xlim[0] == -Infinity) ? 0 : xlim[0];
-                xlim[1] =  (xlim[1] == -Infinity) ? 0 : xlim[1];  
+                xlim[0] =  (xlim[0] == -Inf) ? 0 : xlim[0];
+                xlim[1] =  (xlim[1] == -Inf) ? 0 : xlim[1];  
             };
         };
         logScale[0] = true;
@@ -671,8 +675,8 @@ function plotSvg(elementId, x, y, numLines,
             if (isNaN(ylim[0]) || isNaN(ylim[1])) {
                 ylim = [];
             } else {
-                ylim[0] =  (ylim[0] == -Infinity) ? 0 : ylim[0];
-                ylim[1] =  (ylim[1] == -Infinity) ? 0 : ylim[1];  
+                ylim[0] =  (ylim[0] == -Inf) ? 0 : ylim[0];
+                ylim[1] =  (ylim[1] == -Inf) ? 0 : ylim[1];  
             };
         };
         logScale[1] = true;
@@ -951,19 +955,19 @@ function plotSvg(elementId, x, y, numLines,
     const defsDraw = addSvgEl(svgDraw, "defs");
     if(marker != "") {
         //"o","+", "*", ".", "x", "_", "|", "sq"
-        addMarker(defsDraw, elementId, "mo", [addSvgEl(null, "circle", {"r":"5"})]);
-        addMarker(defsDraw, elementId, "m+", [addSvgLn(null, 0, -5, 0, 5, "", "", ""), addSvgLn(null, -5, 0, 5, 0, "", "", "")]);
-        addMarker(defsDraw, elementId, "m*", [addSvgLn(null, 0, -5, 0, 5, "", "", ""), addSvgLn(null, -5, 0, 5, 0, "", "", ""),
+        addMarker(defsDraw, elementId, "o", [addSvgEl(null, "circle", {"r":"5"})], 1);
+        addMarker(defsDraw, elementId, "+", [addSvgLn(null, 0, -5, 0, 5, "", "", ""), addSvgLn(null, -5, 0, 5, 0, "", "", "")]);
+        addMarker(defsDraw, elementId, "*", [addSvgLn(null, 0, -5, 0, 5, "", "", ""), addSvgLn(null, -5, 0, 5, 0, "", "", ""),
                                               addSvgLn(null, -3.5, -3.5, 3.5, 3.5, "", "", ""), addSvgLn(null, -3.5, 3.5, 3.5, -3.5, "", "", "")]);
-        addMarker(defsDraw, elementId, "m.", [addSvgEl(null, "circle", {"r":"2", "stroke-width":2})]);
-        addMarker(defsDraw, elementId, "mx", [addSvgLn(null, -3.5, -3.5, 3.5, 3.5, "","",""), addSvgLn(null, -3.5, 3.5, 3.5, -3.5, "","","")]);
-        addMarker(defsDraw, elementId, "m_", [addSvgLn(null, -5, 0, 5, 0, "","","")]);
-        addMarker(defsDraw, elementId, "m|", [addSvgLn(null, 0, -5, 0, 5, "","","")]);
-        addMarker(defsDraw, elementId, "msq", [addSvgRec(null,-5,-5,10,10,"", "", "")]);
-        addMarker(defsDraw, elementId, "m^", [addSvgEl(null, "polygon", {"points":"-5 3, 0 -5, 5 3"})]);
-        addMarker(defsDraw, elementId, "mv", [addSvgEl(null, "polygon", {"points":"-5 -4, 0 5, 5 -4"})]);
-        addMarker(defsDraw, elementId, "m\>", [addSvgEl(null, "polygon", {"points":"-3 -5, 5 0, -3 5"})]);
-        addMarker(defsDraw, elementId, "m\<", [addSvgEl(null, "polygon", {"points":"-5 0, 3 5, 3 -5"})]);
+        addMarker(defsDraw, elementId, ".", [addSvgEl(null, "circle", {"r":"2", "stroke-width":2})]);
+        addMarker(defsDraw, elementId, "x", [addSvgLn(null, -3.5, -3.5, 3.5, 3.5, "","",""), addSvgLn(null, -3.5, 3.5, 3.5, -3.5, "","","")]);
+        addMarker(defsDraw, elementId, "_", [addSvgLn(null, -5, 0, 5, 0, "","","")]);
+        addMarker(defsDraw, elementId, "|", [addSvgLn(null, 0, -5, 0, 5, "","","")]);
+        addMarker(defsDraw, elementId, "sq", [addSvgRec(null,-5,-5,10,10,"", "", "")], 1);
+        addMarker(defsDraw, elementId, "^", [addSvgEl(null, "polygon", {"points":"-5 3, 0 -5, 5 3"})], 1);
+        addMarker(defsDraw, elementId, "v", [addSvgEl(null, "polygon", {"points":"-5 -4, 0 5, 5 -4"})], 1);
+        addMarker(defsDraw, elementId, "\>", [addSvgEl(null, "polygon", {"points":"-3 -5, 5 0, -3 5"})], 1);
+        addMarker(defsDraw, elementId, "\<", [addSvgEl(null, "polygon", {"points":"-5 0, 3 5, 3 -5"})], 1);
     }
 
     let numPtPerLine = y.length / numLines;

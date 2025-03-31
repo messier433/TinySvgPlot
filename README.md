@@ -34,8 +34,9 @@ Optional parameters:
  - gridMinor: Scalar or 2 value Boolean array to enable minor grid lines for x- and/or y-axes
  - style: String or string-array the defines the type of each line.<br />
    Valid options:<br />
+   "" solid line<br />
    ":" dotted<br />
-   "--" solid line<br />
+   "--" dash<br />
    "-." dash-dot<br />
    "*" no-line (marker to be defined for scatter plots<br />
  - marker: String or string-array the defines the type of markers used for each line.<br />

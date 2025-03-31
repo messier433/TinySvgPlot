@@ -53,11 +53,17 @@ Optional parameters:
    "v" Triangle pointing down<br />
    "\>" Triangle pointing right<br />
    "\<" Triangle pointing left<br />
+   "fsq" Filled square<br />
+   "fo" Filled circle<br />
+   "f^" Filled triangle pointing up<br />
+   "fv" Filled triangle pointing down<br />
+   "f\>" Filled triangle pointing right<br />
+   "f\<" Filled triangle pointing left<br />
  - xlim: length-2 array that defines min and max range of x-axes
  - ylim: length-2 array that defines min and max range of y-axes
  - legend: String array that defines the legend names for each line
- - freeTool: Boolean that defines if tooltips can be freely placed on line or snap to points (default: true)
  - legendLocation: String that defines the location of the legend<br />
    Allowed values:<br />
    "northeastoutside" On the right side next to the plot area<br />
    "northeast" Inside the plot area<br />
+ - freeTool: Boolean that defines if tooltips can be freely placed on line or snap to points (default: true)

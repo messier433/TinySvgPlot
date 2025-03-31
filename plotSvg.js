@@ -732,8 +732,8 @@ function plotSvg(elementId, x, y, numLines,
         plotHeight = plotHeight - axesLblFontSize - fontSpacing;
     };
     if(ylabel.length>0) {
-        pltArXOffset= pltArXOffset + axesLblFontSize + fontSpacing;
-        plotWidth = plotWidth - axesLblFontSize - fontSpacing;
+        pltArXOffset= pltArXOffset + axesLblFontSize + 2*fontSpacing;
+        plotWidth = plotWidth - axesLblFontSize - 2*fontSpacing;
     };
 
     //////////////////////////////////////

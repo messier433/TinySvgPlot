@@ -959,7 +959,7 @@ function plotSvg(elementId, x, y, numLines,
         addMarker(defsDraw, elementId, "+", [addSvgLn(null, 0, -5, 0, 5, "", "", ""), addSvgLn(null, -5, 0, 5, 0, "", "", "")]);
         addMarker(defsDraw, elementId, "*", [addSvgLn(null, 0, -5, 0, 5, "", "", ""), addSvgLn(null, -5, 0, 5, 0, "", "", ""),
                                               addSvgLn(null, -3.5, -3.5, 3.5, 3.5, "", "", ""), addSvgLn(null, -3.5, 3.5, 3.5, -3.5, "", "", "")]);
-        addMarker(defsDraw, elementId, ".", [addSvgEl(null, "circle", {"r":"2", "stroke-width":2})]);
+        addMarker(defsDraw, elementId, ".", [addSvgEl(null, "circle", {"r":"1.5", "stroke-width":3})]);
         addMarker(defsDraw, elementId, "x", [addSvgLn(null, -3.5, -3.5, 3.5, 3.5, "","",""), addSvgLn(null, -3.5, 3.5, 3.5, -3.5, "","","")]);
         addMarker(defsDraw, elementId, "_", [addSvgLn(null, -5, 0, 5, 0, "","","")]);
         addMarker(defsDraw, elementId, "|", [addSvgLn(null, 0, -5, 0, 5, "","","")]);

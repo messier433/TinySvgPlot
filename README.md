@@ -26,10 +26,10 @@ plotSvg(ID, x, y, numLines, optParam);
 Optional parameters:
  - title: String that defines the main title on top of plot area 
  - subtitle: String that defines the sub-title below the main title with smaller font,
- - xlabel: String that defines the label below the y-axes
+ - xlabel: String that defines the label below the x-axes
  - ylabel: String that defines the label on the left of the y-axes
  - xScale: String that defines the scaling of the x-axes. Valid options: "log", "lin" (default)
- - yScale: String that defines the scaling of the x-axes. Valid options: "log", "lin" (default)
+ - yScale: String that defines the scaling of the y-axes. Valid options: "log", "lin" (default)
  - style: String or string-array the defines the type of each line.<br />
    Valid options:<br />
    ":" dotted<br />

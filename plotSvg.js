@@ -133,92 +133,6 @@ function addSvgRec(parent, x, y, width, height, fill="none", stroke="none", stro
     });  
 };
 
-
-
-function updateMarkerPos(elementId) {
-    const svgDraw = getEl("sd_"+elementId);
-    const tooltips = doc.getElementsByClassName("marker_" + elementId);
-    // update tooltip location which refers to top SVG and not scaled with drawing SVG
-    for(let idx = 0; idx<tooltips.length; ++idx) {
-        const svgSz = size(svgDraw);
-        const svgVw = view(svgDraw)
-        const scaleX = svgVw[2]/svgSz[2];
-        const scaleY = svgVw[3]/svgSz[3];
-
-        tooltips[idx].transform.baseVal[1].matrix.a = scaleX; 
-        tooltips[idx].transform.baseVal[1].matrix.d = scaleY; 
-    }    
-}
-
-function convertCoord(point, pltLim, logScale) {
-    x = point[0] / 100 * pltLim[2] + pltLim[0];
-    y = (1-point[1] / 100) * pltLim[3] + pltLim[1];
-
-    x = (logScale[0]) ? (10**x) : x;
-    y = (logScale[1]) ? (10**y) : y;
-
-    return [x,y];
-}
-
-// find a nearest line within 'proximity'
-function getNearestLine(elementId, Cx, Cy, dx, dy, linTip) {
-    let closestEl = null;
-    let closestDist = Inf;
-    let closestXproj = 0;
-    let closestYproj = 0;
-
-    const polylines = getEl("gp_"+elementId);
-    const nLines = polylines.children.length;
-
-    for(let idx = 0; idx < nLines; ++idx) {
-        const line = polylines.children[idx];
-        const pts = line.points;
-        for(let idxPt = 1; idxPt < pts.length;++idxPt) {
-            const ptA = pts[idxPt-1];
-            const ptB = pts[idxPt];
-
-            // check if point is in rectangle
-            if(((Cx < (ptA.x-dx)) && (Cx < (ptB.x-dx))) || ((Cx > (ptA.x+dx)) && (Cx > (ptB.x+dx))) || 
-                ((Cy < (ptA.y-dy)) && (Cy < (ptB.y-dy))) || ((Cy > (ptA.y+dy)) && (Cy > (ptB.y+dy))))
-                continue;
-                
-            // project point onto line
-            const ptBAx = (ptB.x- ptA.x);
-            const ptBAy = (ptB.y- ptA.y);            
-            const ptCAx = Cx - ptA.x;
-            const ptCAy = Cy - ptA.y;
-            const coeff = (ptBAx*ptCAx + ptBAy*ptCAy) / (ptBAx*ptBAx+ptBAy*ptBAy);
-            const xproj = ptA.x + ptBAx * coeff;
-            const yproj = ptA.y + ptBAy * coeff;
-            const dist = (xproj-Cx)*(xproj-Cx)/dx/dx + (yproj-Cy)*(yproj-Cy)/dy/dy;
-
-            if(dist >= 1 || dist > closestDist) 
-                continue;
-
-            closestDist = dist;
-            closestEl = line;
-            const dCAx = (Cx > ptA.x) ? Cx - ptA.x : ptA.x - Cx;
-            const dCAy = (Cy > ptA.y) ? Cy - ptA.y : ptA.y - Cy;
-            const dCBx = (Cx > ptB.x) ? Cx - ptB.x : ptB.x - Cx;
-            const dCBy = (Cy > ptB.y) ? Cy - ptB.y : ptB.y - Cy;
-            // snap to point
-            if((dCAx < dCBx) && (dCAx < dx) && (dCAy < dy) ) {
-                closestXproj = ptA.x;
-                closestYproj = ptA.y;
-            } else if((dCBx < dx) && (dCBy < dy) ) {
-                closestXproj = ptB.x;
-                closestYproj = ptB.y;
-            } else if(linTip && getAttr(line, "stroke-width")!= 0) {
-                closestXproj = xproj;
-                closestYproj = yproj;
-            } else {
-                closestEl = null;
-            };          
-        };
-    };
-    return {"ele": closestEl, "x":closestXproj, "y":closestYproj};
-}
-
 function plotMouseDown(event, elementId) {
 
     const svgDraw = getEl("sd_"+elementId);
@@ -256,60 +170,8 @@ function plotDrawZoom(event, elementId, x0, y0) {
     } else {
         addSvgEl(null, rectZoom, {"height": -newH, "y":y});
     };
-}
+};
 
-function plotZoom(elementId, rlim, grid, minorGrid, logScale) {
-    const rectZoom = getEl("zoom_rect"+elementId);
-    const svg = getEl("s_"+elementId);
-    const svgDraw = getEl("sd_"+elementId);
-    svgDraw.style.cursor = "crosshair";
-    svg.onmousemove = null; // disable move event to aovid unnessary callbacks
-    if(rectZoom == null)
-        return;
-
-    const isPan = getAttr(rectZoom,"fill-opacity") == 0;
-    const rec = size(rectZoom);
-    rectZoom.remove();
-    if(~isPan && (rec[2] == 0 || rec[3] == 0))
-        return;
-
-    const vb = view(svgDraw);
-
-    const pltAr = size(svgDraw);
-    let recRel = [];
-    if(isPan)
-        recRel =  [-rec[2]/ pltAr[2], rec[3]/ pltAr[3], 1,1];
-    else
-        recRel =  [(rec[0] - pltAr[0]) / pltAr[2], 1-(rec[1]+rec[3] - pltAr[1])/pltAr[3], rec[2]/pltAr[2], rec[3]/pltAr[3]];
-
-    const clim = [rlim[0] + rlim[2]*vb[0]/100, rlim[1] + rlim[3]*(100-vb[3]-vb[1])/100, rlim[2]*vb[2]/100, rlim[3]*vb[3]/100];
-    const nlim = [clim[0] + recRel[0]*clim[2], clim[1] + recRel[1]*clim[3], recRel[2]*clim[2], recRel[3]*clim[3]];
-
-    setAxesLim(elementId, nlim, rlim, grid, minorGrid, logScale);
-}
-
-function setAxesLim(elementId, lim, renderLim, grid, minorGrid, logScale){
-    const svgDraw = getEl("sd_"+elementId);
-    const shiftX = 100*(lim[0]-renderLim[0]) /  renderLim[2];
-    const shiftY = 100*(renderLim[1]+renderLim[3]-lim[1] - lim[3]) /  renderLim[3];
-    svgDraw.viewBox.baseVal.width = 100* lim[2] / renderLim[2];
-    svgDraw.viewBox.baseVal.height = 100* lim[3] / renderLim[3];
-    svgDraw.viewBox.baseVal.x = shiftX;
-    svgDraw.viewBox.baseVal.y = shiftY;
-
-    // shift plot-area rectangle to new viewbox
-    const plr = getEl("plr_"+elementId);
-    const cpr = getEl("cpr_"+elementId);
-    addSvgEl(null, plr, {"x":shiftX, "y":shiftY});
-    addSvgEl(null, cpr, {"x":shiftX, "y":shiftY});
-
-    // remove old grid before creating a new one
-    const gridEl = doc.getElementsByClassName("cg_"+elementId);
-    while (gridEl.length > 0) gridEl[0].remove();    
-
-    createGrid(elementId, lim, grid, minorGrid, logScale);
-    updateMarkerPos(elementId);
-}
 
 function calcTick(range, nTicks, logScale)
 {
@@ -748,12 +610,12 @@ function plotSvg(elementId, x, y, numLines,
 
     const clipDraw = addSvgEl(svgDraw, "clipPath", {"id":"cpg_"+elementId});
     const clipRec = addSvgRec(clipDraw, 0, 0, "100%", "100%");
-    addSvgEl(null, clipRec, {"id":"cpr_"+elementId});
+    const cpr = addSvgEl(null, clipRec, {"id":"cpr_"+elementId});
     const gp = addSvgEl(svgDraw, "g", {"id":"gp_"+elementId, "clip-path":"url(#cpg_" + elementId + ")" });
     for(let lnIdx = 0; lnIdx < numLines; ++lnIdx) {
         const colorIdx = lnIdx % colorMapRGB.length;
         const dashStyle = Array.isArray(style) ? style[lnIdx] : style;
-        const markerStyle = "url(#m" + (Array.isArray(marker) ? marker[lnIdx] : marker) + ")";  
+        const markerStyle = "url(#m" + (Array.isArray(marker) ? marker[lnIdx] : marker) +"_"+elementId+ ")";  
         let dashStr = "";
         let strokeWidth = 2;
         switch(dashStyle) {            
@@ -795,7 +657,7 @@ function plotSvg(elementId, x, y, numLines,
     // create drawing area
     //////////////////////////////
     const plRec = addSvgRec(svgDraw, 0, 0, "100%", "100%", "none", "black", 1);
-    addSvgEl(null, plRec, {"id":"plr_"+elementId,"pointer-events": "visible"});
+    const plr = addSvgEl(null, plRec, {"id":"plr_"+elementId,"pointer-events": "visible"});
 
    
     // add legend last to be in front fs drawing
@@ -816,9 +678,9 @@ function plotSvg(elementId, x, y, numLines,
     plRec.onclick = (event) => plotClicked(event)
     svg.oncontextmenu = (event) => {event.preventDefault()}; // prevent context menu during zoom
     svgDraw.onmousedown = (event) => plotMouseDown(event, elementId);
-    svgDraw.ondblclick = () => setAxesLim(elementId, pltLim, pltLim, grid, gridMinorSet, logScale);
+    svgDraw.ondblclick = () => setAxesLim(pltLim);
     svg.onmousedown = (event) => {event.preventDefault()}; // prevent context menu during zoom
-    svg.onmouseup = () => plotZoom( elementId, pltLim, grid, gridMinorSet, logScale);
+    svg.onmouseup = () => plotZoom();
    
     if(legend.length > 0)
         gleg.onwheel = (event) => scrollLegend(event, elementId, hLegendItems)
@@ -850,7 +712,7 @@ function plotSvg(elementId, x, y, numLines,
     
     function addMarker(id, elements, addSolid=0) {
         //"o","+", "*", ".", "x", "_", "|", "sq"
-        const marker = addSvgEl(defsDraw, "marker", {"id":"m"+id,
+        const marker = addSvgEl(defsDraw, "marker", {"id":"m"+id+"_"+elementId,
             "markerWidth":"10", "markerHeight":"10", "refX":"5", "refY":"5",
             "markerUnits":"userSpaceOnUse", "fill":"none","stroke":"context-stroke"});
         const markerGrp = addSvgEl(marker, "g", {
@@ -862,7 +724,7 @@ function plotSvg(elementId, x, y, numLines,
             addSvgEl(markerGrp, elements[idx]);
     
         // copy but fill
-        if(addSolid) addSvgEl(defsDraw, marker.cloneNode(true), {"id":"mf"+id, "fill":"context-stroke"});
+        if(addSolid) addSvgEl(defsDraw, marker.cloneNode(true), {"id":"mf"+id+"_"+elementId, "fill":"context-stroke"});
     };
 
     function downloadSvg() {
@@ -936,7 +798,7 @@ function plotSvg(elementId, x, y, numLines,
             }
         }
         // update tooltip location which refers to top SVG and not scaled with drawing SVG
-        updateMarkerPos(elementId);
+        updateMarkerPos();
     };
 
     function scrollLegend(event){
@@ -956,6 +818,74 @@ function plotSvg(elementId, x, y, numLines,
         return false;
     };
 
+    function convertCoord(point, pltLim, logScale) {
+        x = point[0] / 100 * pltLim[2] + pltLim[0];
+        y = (1-point[1] / 100) * pltLim[3] + pltLim[1];
+    
+        x = (logScale[0]) ? (10**x) : x;
+        y = (logScale[1]) ? (10**y) : y;
+    
+        return [x,y];
+    }
+
+    // find a nearest line within 'proximity'
+    function getNearestLine(elementId, Cx, Cy, dx, dy, linTip) {
+        let closestEl = null;
+        let closestDist = Inf;
+        let closestXproj = 0;
+        let closestYproj = 0;
+
+        const polylines = getEl("gp_"+elementId);
+        const nLines = polylines.children.length;
+
+        for(let idx = 0; idx < nLines; ++idx) {
+            const line = polylines.children[idx];
+            const pts = line.points;
+            for(let idxPt = 1; idxPt < pts.length;++idxPt) {
+                const ptA = pts[idxPt-1];
+                const ptB = pts[idxPt];
+
+                // check if point is in rectangle
+                if(((Cx < (ptA.x-dx)) && (Cx < (ptB.x-dx))) || ((Cx > (ptA.x+dx)) && (Cx > (ptB.x+dx))) || 
+                    ((Cy < (ptA.y-dy)) && (Cy < (ptB.y-dy))) || ((Cy > (ptA.y+dy)) && (Cy > (ptB.y+dy))))
+                    continue;
+                    
+                // project point onto line
+                const ptBAx = (ptB.x- ptA.x);
+                const ptBAy = (ptB.y- ptA.y);            
+                const ptCAx = Cx - ptA.x;
+                const ptCAy = Cy - ptA.y;
+                const coeff = (ptBAx*ptCAx + ptBAy*ptCAy) / (ptBAx*ptBAx+ptBAy*ptBAy);
+                const xproj = ptA.x + ptBAx * coeff;
+                const yproj = ptA.y + ptBAy * coeff;
+                const dist = (xproj-Cx)*(xproj-Cx)/dx/dx + (yproj-Cy)*(yproj-Cy)/dy/dy;
+
+                if(dist >= 1 || dist > closestDist) 
+                    continue;
+
+                closestDist = dist;
+                closestEl = line;
+                const dCAx = (Cx > ptA.x) ? Cx - ptA.x : ptA.x - Cx;
+                const dCAy = (Cy > ptA.y) ? Cy - ptA.y : ptA.y - Cy;
+                const dCBx = (Cx > ptB.x) ? Cx - ptB.x : ptB.x - Cx;
+                const dCBy = (Cy > ptB.y) ? Cy - ptB.y : ptB.y - Cy;
+                // snap to point
+                if((dCAx < dCBx) && (dCAx < dx) && (dCAy < dy) ) {
+                    closestXproj = ptA.x;
+                    closestYproj = ptA.y;
+                } else if((dCBx < dx) && (dCBy < dy) ) {
+                    closestXproj = ptB.x;
+                    closestYproj = ptB.y;
+                } else if(linTip && getAttr(line, "stroke-width")!= 0) {
+                    closestXproj = xproj;
+                    closestYproj = yproj;
+                } else {
+                    closestEl = null;
+                };          
+            };
+        };
+        return {"ele": closestEl, "x":closestXproj, "y":closestYproj};
+    }
 
     function plotClicked(event) {
         const drawSz = size(svgDraw);
@@ -995,7 +925,7 @@ function plotSvg(elementId, x, y, numLines,
         
         tooltip.onclick = (event) => {
              if(event.srcElement.parentNode.tagName == "g") event.srcElement.parentNode.remove();
-             if(event.detail > 1)  setAxesLim(elementId, pltLim, pltLim, grid, gridMinorSet, logScale);// double click
+             if(event.detail > 1)  setAxesLim(pltLim);// double click
         };   
         
         let line = null;
@@ -1017,7 +947,69 @@ function plotSvg(elementId, x, y, numLines,
         addSvgRec(tooltip, -2, -2, 4, 4, "black");
         // add invisble circle to  capture clicks
         addSvgEl(tooltip, "circle", {"r":dSnap, "fill":"none", "pointer-events": "visible"});
-    }
+    };
+
+    function updateMarkerPos() {
+        const tooltips = doc.getElementsByClassName("marker_" + elementId);
+        // update tooltip location which refers to top SVG and not scaled with drawing SVG
+        for(let idx = 0; idx<tooltips.length; ++idx) {
+            const svgSz = size(svgDraw);
+            const svgVw = view(svgDraw)
+            const scaleX = svgVw[2]/svgSz[2];
+            const scaleY = svgVw[3]/svgSz[3];
+    
+            tooltips[idx].transform.baseVal[1].matrix.a = scaleX; 
+            tooltips[idx].transform.baseVal[1].matrix.d = scaleY; 
+        }    
+    };
+
+    function setAxesLim(lim){
+        const shiftX = 100*(lim[0]-pltLim[0]) /  pltLim[2];
+        const shiftY = 100*(pltLim[1]+pltLim[3]-lim[1] - lim[3]) /  pltLim[3];
+        svgDraw.viewBox.baseVal.width = 100* lim[2] / pltLim[2];
+        svgDraw.viewBox.baseVal.height = 100* lim[3] / pltLim[3];
+        svgDraw.viewBox.baseVal.x = shiftX;
+        svgDraw.viewBox.baseVal.y = shiftY;
+    
+        // shift plot-area rectangle to new viewbox
+        addSvgEl(null, plr, {"x":shiftX, "y":shiftY});
+        addSvgEl(null, cpr, {"x":shiftX, "y":shiftY});
+    
+        // remove old grid before creating a new one
+        const gridEl = doc.getElementsByClassName("cg_"+elementId);
+        while (gridEl.length > 0) gridEl[0].remove();    
+    
+        createGrid(elementId, lim, grid, gridMinorSet, logScale);
+        updateMarkerPos();
+    };
+
+    function plotZoom() {
+        const rectZoom = getEl("zoom_rect"+elementId);
+        svgDraw.style.cursor = "crosshair";
+        svg.onmousemove = null; // disable move event to aovid unnessary callbacks
+        if(rectZoom == null)
+            return;
+    
+        const isPan = getAttr(rectZoom,"fill-opacity") == 0;
+        const rec = size(rectZoom);
+        rectZoom.remove();
+        if(~isPan && (rec[2] == 0 || rec[3] == 0))
+            return;
+    
+        const vb = view(svgDraw);
+    
+        const pltAr = size(svgDraw);
+        let recRel = [];
+        if(isPan)
+            recRel =  [-rec[2]/ pltAr[2], rec[3]/ pltAr[3], 1,1];
+        else
+            recRel =  [(rec[0] - pltAr[0]) / pltAr[2], 1-(rec[1]+rec[3] - pltAr[1])/pltAr[3], rec[2]/pltAr[2], rec[3]/pltAr[3]];
+    
+        const clim = [pltLim[0] + pltLim[2]*vb[0]/100, pltLim[1] + pltLim[3]*(100-vb[3]-vb[1])/100, pltLim[2]*vb[2]/100, pltLim[3]*vb[3]/100];
+        const nlim = [clim[0] + recRel[0]*clim[2], clim[1] + recRel[1]*clim[3], recRel[2]*clim[2], recRel[3]*clim[3]];
+    
+        setAxesLim(nlim);
+    };
 };
 
 };

@@ -60,27 +60,6 @@ function transform(element, translate, scale){
     element.setAttribute("transform", str);
 }
 
-function setLim(vals, lim) {
-    if(lim.length < 2) {
-        let len = vals.length;
-        let max = -Inf;
-        let min = Inf;
-        while (len--) {
-            if(isFinite(vals[len])) {
-                min = (vals[len] < min) ? vals[len] : min;
-                max = (vals[len] > max) ? vals[len] : max;
-            }
-        }
-
-        lim = [min, max]; 
-    };
-    if(lim[0] == lim[1]) {
-        lim[0] = lim[0] - 0.5;
-        lim[1] = lim[1] + 0.5;
-    };
-    return lim;
-}
-
 function num2eng(val) {
     const unitList = ['y', 'z', 'a', 'f', 'p', 'n', 'u', 'm', '', 'k', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y'];
     const zeroIndex = 8;
@@ -154,43 +133,7 @@ function addSvgRec(parent, x, y, width, height, fill="none", stroke="none", stro
     });  
 };
 
-function legClicked(event, fontsize, ySpacing, elementId, numLines) {
-    const svgLeg = getEl("sl_"+elementId); //event.srcElement.ownerSVGElement;
-    const legY = event.offsetY-getAttr(svgLeg, "y")+view(svgLeg)[1]; // x position inside plotting area
-    const lnIdx = floor((legY-ySpacing/2) / (fontsize+ySpacing));
-    const clkLn = getEl("pl_"+elementId+"_"+lnIdx);
-    if(clkLn == null)
-        return;
-    const style = clkLn.style.display;
 
-
-    // else
-    if(numLines == 0) {
-        const tooltips = getEl("gpl_" +elementId+"_"+lnIdx); // tooltip group
-        if (style === "none") {
-            getEl("pl_"+elementId+"_"+lnIdx).style.display = "block";
-            getEl("lgi_"+elementId+"_"+lnIdx).style.opacity = 1;
-            if(tooltips!=null) tooltips.style.display = "block";
-        } else {        
-            getEl("pl_"+elementId+"_"+lnIdx).style.display = "none";
-            getEl("lgi_"+elementId+"_"+lnIdx).style.opacity = 0.3;
-            if(tooltips!=null) tooltips.style.display = "none";
-        };
-    } else {
-        for(let idx = 0; idx < numLines; ++idx) {
-            const tooltips = getEl("gpl_" +elementId+"_"+idx); // tooltip group        
-            if (style === "none") { // make all visible again
-                getEl("pl_"+elementId+"_"+idx).style.display = "block";
-                getEl("lgi_"+elementId+"_"+idx).style.opacity = 1;
-                if(tooltips!=null) tooltips.style.display = "block";
-            } else  if(idx != lnIdx) { // only keep selected one visible
-                getEl("pl_"+elementId+"_"+idx).style.display = "none";
-                getEl("lgi_"+elementId+"_"+idx).style.opacity = 0.3;
-                if(tooltips!=null) tooltips.style.display = "none";
-            };
-        };
-    };
-}
 
 function updateMarkerPos(elementId) {
     const svgDraw = getEl("sd_"+elementId);
@@ -207,130 +150,6 @@ function updateMarkerPos(elementId) {
     }    
 }
 
-function resizeSvg(elementId, padX, padY, hLegendItems, hLegendMargin) {
-    const svgLeg = getEl("sl_"+elementId);
-    const svgDraw = getEl("sd_"+elementId);
-    const svgBg = getEl("s_bg_"+elementId);
-    const svgTop = getEl("st_"+elementId);
-    const svgBottom = getEl("s_btm_"+elementId);
-    const svgLeft = getEl("sy_"+elementId);
-    const svg = getEl("s_"+elementId);
-    const button = getEl("bd_"+elementId);
-    
-    const parentSz = size(svg);
-    const childSz = size(svgDraw);
-    const newChildWidth = parentSz[2]-padX;
-    const newChildHeight = parentSz[3]-padY;
-
-    if(childSz[2] != newChildWidth) {
-        setAttr(svgDraw, "width", newChildWidth); 
-        setAttr(svgBg, "width", newChildWidth);            
-        setAttr(svgTop, "width", newChildWidth);    
-        setAttr(svgBottom, "width", newChildWidth); 
-        if(svgLeg!=null) svgLeg.x.baseVal.value += newChildWidth - childSz[2];  
-        button.transform.baseVal[0].matrix.e += newChildWidth - childSz[2];   
-    }
-    if(childSz[3] != newChildHeight) {
-        setAttr(svgDraw, "height",  newChildHeight);
-        setAttr(svgBg, "height", newChildHeight);    
-        setAttr(svgLeft, "height", newChildHeight); 
-        if(svgLeg!=null) {
-            let newLegHeight = newChildHeight -hLegendMargin;
-            newLegHeight = (newLegHeight > hLegendItems) ? hLegendItems : newLegHeight;
-            setAttr(svgLeg, "height", newLegHeight);
-            svgLeg.viewBox.baseVal.height = newLegHeight;
-        }
-    }
-    // update tooltip location which refers to top SVG and not scaled with drawing SVG
-    updateMarkerPos(elementId);
-};
-
-function scrollLegend(event, elementId, hLegendItems){
-    const svgLeg = getEl("sl_"+elementId);
-    const rectLeg = getEl("rect_leg_"+elementId);
-    const legSz = size(svgLeg);
-    const svgLegVw = view(svgLeg);   
-    const minScroll = 0;
-    const maxScroll = hLegendItems - legSz[3];
-    svgLegVw[1] +=  event.deltaY;
-
-    if(svgLegVw[1] < minScroll)
-        svgLegVw[1] = minScroll;
-    if(svgLegVw[1] > maxScroll)
-        svgLegVw[1] = maxScroll;
-
-    svgLeg.viewBox.baseVal.y = svgLegVw[1];
-    rectLeg.y.baseVal.value = svgLegVw[1];
-    return false;
-}
-
-function plotClicked(event, elementId, pltLim, grid, minorGrid, logScale, freeTool) {
-    const svgDraw = getEl("sd_"+elementId);
-
-    //const svg = getEl("s_"+elementId);
-
-    //else
-    const drawSz = size(svgDraw);
-    const drawVw = view(svgDraw)
-    const scaleX = drawVw[2]/drawSz[2];
-    const scaleY = drawVw[3]/drawSz[3];
-    const plotX = (event.offsetX-drawSz[0]) * scaleX + drawVw[0]; // x position inside plotting viewBox
-    const plotY = (event.offsetY-drawSz[1]) * scaleY + drawVw[1]; // y position inside plotting viewBox
-    const dSnap = 6;
-    const detX = dSnap * scaleX;
-    const detY = dSnap * scaleY;
-    result = getNearestLine(elementId, plotX, plotY, detX, detY, freeTool);
-    const closestEl = result.ele;
-    if(closestEl == null)
-        return;
-
-    const intX = result.x;
-    const intY = result.y;
-    //const topX = (intX-vBx)/scaleX + drawX;
-    //const topY = (intY-vBy)/scaleY + drawY;
-
-    const prefix = "pl_" + elementId;
-    const lnId = closestEl.id;
-    const lnIdx = lnId.slice(prefix.length, lnId.length); // substring includes "_"
-    const legendItem = getEl("lti_"+elementId+lnIdx);
-    const plotLine = getEl("pl_"+elementId+lnIdx);
-    const lineColor = getAttr(plotLine, "stroke");
-    const sourceCoord = convertCoord([intX, intY], pltLim, logScale);
-    let gl = getEl("gpl_" +elementId+lnIdx);
-    if(gl == null) { // create group for all tooltips on the same line (to be used in case line vibility is toggled)
-        //gl = addSvgEl(svg, "g", {"id":"gpl_" + elementId+lnIdx});
-        gl = addSvgEl(svgDraw, "g", {"id":"gpl_" + elementId+lnIdx});
-    }
-    const tooltip = addSvgEl(gl, "g", {"class":"marker_"+elementId});
-    transform(tooltip, [intX,intY], [scaleX, scaleY]);
-    const rect = addSvgRec(tooltip, 5, -9, 0, 32, lineColor, "rgb(223,223,223)", 1, rx=4);
-    
-    tooltip.onclick = (event) => {
-         if(event.srcElement.parentNode.tagName == "g") event.srcElement.parentNode.remove();
-         if(event.detail > 1)  setAxesLim(elementId, pltLim, pltLim, grid, minorGrid, logScale);// double click
-    };   
-    
-    let line = null;
-    if(legendItem != null) {
-        text = addSvgTxt(tooltip, legendItem.textContent, 7, -11, 12, "start", "Sans,Arial", "white" ); 
-        addSvgEl(null, text, {"font-weight":"bold"});
-        line = addSvgLn(tooltip, 5, -8, 5,-8, stroke="white");
-		addSvgEl(null, rect, {"y":-23, "height":46});
-    }
-
-    addSvgTxt(tooltip, "x: " + num2eng([sourceCoord[0]]), 7, 4, 12, "start", "Sans,Arial", "white");
-    addSvgTxt(tooltip, "y: " + num2eng([sourceCoord[1]]), 7, 18, 12, "start", "Sans,Arial", "white");    
-            
-    const bbox = tooltip.getBBox();
-    addSvgEl(null, rect, {"width": bbox.width+4});
-    if(line != null)
-        setAttr(line, "x2", bbox.width+4+5);
-
-    addSvgRec(tooltip, -2, -2, 4, 4, "black");
-    // add invisble circle to  capture clicks
-    addSvgEl(tooltip, "circle", {"r":dSnap, "fill":"none", "pointer-events": "visible"});
-}
-
 function convertCoord(point, pltLim, logScale) {
     x = point[0] / 100 * pltLim[2] + pltLim[0];
     y = (1-point[1] / 100) * pltLim[3] + pltLim[1];
@@ -342,7 +161,7 @@ function convertCoord(point, pltLim, logScale) {
 }
 
 // find a nearest line within 'proximity'
-function getNearestLine(elementId, Cx, Cy, dx, dy, freeTool) {
+function getNearestLine(elementId, Cx, Cy, dx, dy, linTip) {
     let closestEl = null;
     let closestDist = Inf;
     let closestXproj = 0;
@@ -389,7 +208,7 @@ function getNearestLine(elementId, Cx, Cy, dx, dy, freeTool) {
             } else if((dCBx < dx) && (dCBy < dy) ) {
                 closestXproj = ptB.x;
                 closestYproj = ptB.y;
-            } else if(freeTool && getAttr(line, "stroke-width")!= 0) {
+            } else if(linTip && getAttr(line, "stroke-width")!= 0) {
                 closestXproj = xproj;
                 closestYproj = yproj;
             } else {
@@ -609,44 +428,12 @@ function addTickLines(parent, elementId, offset, grid, axIdx, tickLength, dash){
         
 }
 
-function downloadSvg(elementId, title) {
-    const button = getEl("bd_"+elementId);
-    button.style.display = "none"; // hide button for screenshot
-    const svg = getEl("s_"+elementId);
-    const svgSz = size(svg);
-    const outerStr = "\<svg width=\"" + svgSz[2] + "\" height=\""+svgSz[3]+"\" xmlns=\""+ns+"\"\>";
-    const svgBlob = new Blob([outerStr, svg.innerHTML, "\</svg\>"], {type:"image/svg+xml;charset=utf-8"});
-    const svgUrl = URL.createObjectURL(svgBlob);
-    const downloadLink = doc.createElement("a");
-    downloadLink.href = svgUrl;
-    downloadLink.download = "snapshot_"+title +".svg";
-    addSvgEl(doc.body, downloadLink)
-    downloadLink.click();
-    doc.body.removeChild(downloadLink);
-    button.style.display = "block";
-}
 
-function addMarker(defs, elementId, id, elements, addSolid=0) {
-    //"o","+", "*", ".", "x", "_", "|", "sq"
-    const marker = addSvgEl(defs, "marker", {"id":"m"+id,
-        "markerWidth":"10", "markerHeight":"10", "refX":"5", "refY":"5",
-        "markerUnits":"userSpaceOnUse", "fill":"none","stroke":"context-stroke"});
-    const markerGrp = addSvgEl(marker, "g", {
-        "stroke-width":1.5,"vector-effect":"non-scaling-stroke",
-        "class":"marker_" + elementId});
-    transform(markerGrp, [5,5], [1,1]);
-
-    for(let idx = 0; idx < elements.length; ++idx)
-        addSvgEl(markerGrp, elements[idx]);
-
-    // copy but fill
-    if(addSolid) addSvgEl(defs, marker.cloneNode(true), {"id":"mf"+id, "fill":"context-stroke"});
-}
 
 function plotSvg(elementId, x, y, numLines, 
 {title = "", subtitle = "", xlabel = "", ylabel="", xlim=[], ylim=[], 
     style="-", marker="", legend = [], xScale = "lin", yScale = "lin", grid = true, 
-    gridMinor = [], legendLocation = 'northeastoutside', freeTool = true 
+    gridMinor = [], legendLocation = 'northeastoutside', linTip = true 
 }={}
 )
 {      
@@ -741,41 +528,33 @@ function plotSvg(elementId, x, y, numLines,
     //////////////////////////////////////
     // create group
     const gleg = addSvgEl(null, "g", {"pointer-events":"visible"});
-    gleg.onclick = (event) => legClicked(event, legendFontSize, legendYSpacing, elementId, 0);
-    gleg.ondblclick = (event) => legClicked(event, legendFontSize, legendYSpacing, elementId, numLines);
+    gleg.onclick = (event) => legClicked(event, 0);
+    gleg.ondblclick = (event) => legClicked(event, numLines);
    
     let hLegendMargin = 0;
     let hLegendItems = 0;
-    let legFill = "";
+    let legFill = "none";
+    let svgLeg = null; // define already here
+    let recleg  = null;
     if(legend.length>0 && numLines > 0 && x.length > 0) {  
-        // set legend dimensions depending on location        
-        switch(legendLocation) {
-            case 'northeast':
-                yLegend = pltArYOffset + 2*legendYSpacing;
-                hLegendMargin = 4*legendYSpacing;
-                legFill="white";
-                break;
-            case 'northeastoutside':
-                yLegend = pltArYOffset;
-                legFill = "none";
-                break;
-            default:
-                throw new Error("LegendLocation not supported");
+        // set legend dimensions depending on location  
+        let yLegend = pltArYOffset;      
+        if(legendLocation == 'northeast') {
+            yLegend = pltArYOffset + 2*legendYSpacing;
+            hLegendMargin = 4*legendYSpacing;
+            legFill="white";
         }
         const hLegendMax = plotHeight - hLegendMargin;   
+        const defs = addSvgEl(svg, "defs");
+        // draw legend box (change width later)
+        svgLeg = addSvgEl(gleg, "svg", {"id":"sl_"+elementId});
         // add legend already here to calculate width
         // will be moved again at the end of the function 
-        addSvgEl(svg,gleg);     
-        
-        // define legend line        
-        const defs = addSvgEl(svg, "defs");
+        addSvgEl(svg,gleg);             
+        // define legend line  
         addSvgEl(defs, "line", {"id":"ll_"+elementId, "x1":0, "y1":0,"x2":legendLineLength,"y2":0, 
             "stroke-width":2,"vector-effect":"non-scaling-stroke"});
 
-                
-        // draw legend box (change width later)
-        const svgLeg = addSvgEl(gleg, "svg", {"id":"sl_"+elementId});
-    
         let nLegend = numLines; 
         let legendTmp = legend;
         if(legend.length > numLines) { // cannot be more legend entries than lines
@@ -788,7 +567,7 @@ function plotSvg(elementId, x, y, numLines,
         addSvgEl(null, svgLeg, {"x": "100%", "height": hLegend});       
     
         // draw legend box (change width later)       
-        const recleg = addSvgRec(svgLeg, 0, 0, 0, "100%", legFill, "black");
+        recleg = addSvgRec(svgLeg, 0, 0, 0, "100%", legFill, "black");
         addSvgEl(null, recleg, {"id":"rect_leg_"+elementId});
         // create legend items
         for(let lnIdx = 0; lnIdx < nLegend; ++lnIdx) {
@@ -818,21 +597,13 @@ function plotSvg(elementId, x, y, numLines,
         setAttr(recleg,"width","100%");
         setAttr(svgLeg,"width",wLegend);
 
-        let xLegend = 0;
+        let xLegend = -wLegend - legendXSpacing;
+        plotWidth -= wLegend + 2*legendXSpacing;
         // update plot and legend dimensions depending on legend position
-        switch(legendLocation) {
-            case 'northeast':
-                //xLegend = pltArXOffset + plotWidth - wLegend - 2*legendXSpacing;
-                xLegend = -wLegend - 2*legendXSpacing - xAxesSpacing;
-                plotWidth -= xAxesSpacing;                
-                break;
-            case 'northeastoutside':
-                //xLegend = pltArXOffset + plotWidth - wLegend;
-                xLegend = -wLegend - legendXSpacing;
-                plotWidth -= wLegend + 2*legendXSpacing;
-                break;
-            default:
-                throw new Error("LegendLocation not supported");
+        if(legendLocation == 'northeast') {
+            //xLegend = pltArXOffset + plotWidth - wLegend - 2*legendXSpacing;
+            xLegend -= legendXSpacing + xAxesSpacing;
+            plotWidth -= xAxesSpacing - wLegend - 2*legendXSpacing;                
         }
 
         // move legend to final location   
@@ -900,7 +671,7 @@ function plotSvg(elementId, x, y, numLines,
     // plotting area
     //////////////////////////////   
     // background SVG used for ticks and grid
-    addSvgEl(svg, "svg", {"id":"s_bg_"+elementId, "preserveAspectRatio":"none",
+    const svgBg = addSvgEl(svg, "svg", {"id":"s_bg_"+elementId, "preserveAspectRatio":"none",
             "viewBox":"0 0 100 100", 
             "width":pltAr[2], "height":pltAr[3], 
             "x":pltAr[0], "y":pltAr[1]});
@@ -955,19 +726,19 @@ function plotSvg(elementId, x, y, numLines,
     const defsDraw = addSvgEl(svgDraw, "defs");
     if(marker != "") {
         //"o","+", "*", ".", "x", "_", "|", "sq"
-        addMarker(defsDraw, elementId, "o", [addSvgEl(null, "circle", {"r":"5"})], 1);
-        addMarker(defsDraw, elementId, "+", [addSvgLn(null, 0, -5, 0, 5, "", "", ""), addSvgLn(null, -5, 0, 5, 0, "", "", "")]);
-        addMarker(defsDraw, elementId, "*", [addSvgLn(null, 0, -5, 0, 5, "", "", ""), addSvgLn(null, -5, 0, 5, 0, "", "", ""),
+        addMarker("o", [addSvgEl(null, "circle", {"r":"5"})], 1);
+        addMarker("+", [addSvgLn(null, 0, -5, 0, 5, "", "", ""), addSvgLn(null, -5, 0, 5, 0, "", "", "")]);
+        addMarker("*", [addSvgLn(null, 0, -5, 0, 5, "", "", ""), addSvgLn(null, -5, 0, 5, 0, "", "", ""),
                                               addSvgLn(null, -3.5, -3.5, 3.5, 3.5, "", "", ""), addSvgLn(null, -3.5, 3.5, 3.5, -3.5, "", "", "")]);
-        addMarker(defsDraw, elementId, ".", [addSvgEl(null, "circle", {"r":"1.5", "stroke-width":3})]);
-        addMarker(defsDraw, elementId, "x", [addSvgLn(null, -3.5, -3.5, 3.5, 3.5, "","",""), addSvgLn(null, -3.5, 3.5, 3.5, -3.5, "","","")]);
-        addMarker(defsDraw, elementId, "_", [addSvgLn(null, -5, 0, 5, 0, "","","")]);
-        addMarker(defsDraw, elementId, "|", [addSvgLn(null, 0, -5, 0, 5, "","","")]);
-        addMarker(defsDraw, elementId, "sq", [addSvgRec(null,-5,-5,10,10,"", "", "")], 1);
-        addMarker(defsDraw, elementId, "^", [addSvgEl(null, "polygon", {"points":"-5 3, 0 -5, 5 3"})], 1);
-        addMarker(defsDraw, elementId, "v", [addSvgEl(null, "polygon", {"points":"-5 -4, 0 5, 5 -4"})], 1);
-        addMarker(defsDraw, elementId, "\>", [addSvgEl(null, "polygon", {"points":"-3 -5, 5 0, -3 5"})], 1);
-        addMarker(defsDraw, elementId, "\<", [addSvgEl(null, "polygon", {"points":"-5 0, 3 5, 3 -5"})], 1);
+        addMarker(".", [addSvgEl(null, "circle", {"r":"1.5", "stroke-width":3})]);
+        addMarker("x", [addSvgLn(null, -3.5, -3.5, 3.5, 3.5, "","",""), addSvgLn(null, -3.5, 3.5, 3.5, -3.5, "","","")]);
+        addMarker("_", [addSvgLn(null, -5, 0, 5, 0, "","","")]);
+        addMarker("|", [addSvgLn(null, 0, -5, 0, 5, "","","")]);
+        addMarker("sq", [addSvgRec(null,-5,-5,10,10,"", "", "")], 1);
+        addMarker("^", [addSvgEl(null, "polygon", {"points":"-5 3, 0 -5, 5 3"})], 1);
+        addMarker("v", [addSvgEl(null, "polygon", {"points":"-5 -4, 0 5, 5 -4"})], 1);
+        addMarker("tr", [addSvgEl(null, "polygon", {"points":"-3 -5, 5 0, -3 5"})], 1);
+        addMarker("tl", [addSvgEl(null, "polygon", {"points":"-5 0, 3 5, 3 -5"})], 1);
     }
 
     let numPtPerLine = y.length / numLines;
@@ -1039,10 +810,10 @@ function plotSvg(elementId, x, y, numLines,
     addSvgEl(downloadBtn, "polyline", {"stroke":"black", "fill":"none","points":"8,0 8,16 2,9 8,16 14,9"});
     addSvgEl(downloadBtn, "polyline", {"stroke":"black", "fill":"none","points":"0,17 0,20 16,20 16,17"});
     addSvgRec(downloadBtn, 0, 0, 21, 21)
-    downloadBtn.onclick = () => {downloadSvg(elementId, title)};
+    downloadBtn.onclick = () => {downloadSvg()};
 
     // add event callbacks
-    plRec.onclick = (event) => plotClicked(event, elementId, pltLim, grid, gridMinorSet, logScale, freeTool)
+    plRec.onclick = (event) => plotClicked(event)
     svg.oncontextmenu = (event) => {event.preventDefault()}; // prevent context menu during zoom
     svgDraw.onmousedown = (event) => plotMouseDown(event, elementId);
     svgDraw.ondblclick = () => setAxesLim(elementId, pltLim, pltLim, grid, gridMinorSet, logScale);
@@ -1053,8 +824,200 @@ function plotSvg(elementId, x, y, numLines,
         gleg.onwheel = (event) => scrollLegend(event, elementId, hLegendItems)
     //gleg.addEventListener('wheel', () => this.scrollLegend(), { passive:false });
     //window.addEventListener('resize', () => resizeSvg(elementId, padding[0], padding[1], hLegendItems, hLegendMargin));
-    new ResizeObserver(() => resizeSvg(elementId, padding[0], padding[1], hLegendItems, hLegendMargin)).observe(svg);
-    resizeSvg(elementId, padding[0], padding[1], hLegendItems, hLegendMargin); // execute once for proper scaling of several elements
+    new ResizeObserver(() => resizeSvg()).observe(svg);
+    resizeSvg(); // execute once for proper scaling of several elements
+
+    function setLim(vals, lim) {
+        if(lim.length < 2) {
+            let len = vals.length;
+            let max = -Inf;
+            let min = Inf;
+            while (len--) {
+                if(isFinite(vals[len])) {
+                    min = (vals[len] < min) ? vals[len] : min;
+                    max = (vals[len] > max) ? vals[len] : max;
+                }
+            }
+    
+            lim = [min, max]; 
+        };
+        if(lim[0] == lim[1]) {
+            lim[0] = lim[0] - 0.5;
+            lim[1] = lim[1] + 0.5;
+        };
+        return lim;
+    };
+    
+    function addMarker(id, elements, addSolid=0) {
+        //"o","+", "*", ".", "x", "_", "|", "sq"
+        const marker = addSvgEl(defsDraw, "marker", {"id":"m"+id,
+            "markerWidth":"10", "markerHeight":"10", "refX":"5", "refY":"5",
+            "markerUnits":"userSpaceOnUse", "fill":"none","stroke":"context-stroke"});
+        const markerGrp = addSvgEl(marker, "g", {
+            "stroke-width":1.5,"vector-effect":"non-scaling-stroke",
+            "class":"marker_" + elementId});
+        transform(markerGrp, [5,5], [1,1]);
+    
+        for(let idx = 0; idx < elements.length; ++idx)
+            addSvgEl(markerGrp, elements[idx]);
+    
+        // copy but fill
+        if(addSolid) addSvgEl(defsDraw, marker.cloneNode(true), {"id":"mf"+id, "fill":"context-stroke"});
+    };
+
+    function downloadSvg() {
+        downloadBtn.style.display = "none"; // hide button for screenshot
+        const svgSz = size(svg); // get current size of svg
+        const outerStr = "\<svg width=\"" + svgSz[2] + "\" height=\""+svgSz[3]+"\" xmlns=\""+ns+"\"\>";
+        const svgBlob = new Blob([outerStr, svg.innerHTML, "\</svg\>"], {type:"image/svg+xml;charset=utf-8"});
+        const svgUrl = URL.createObjectURL(svgBlob);
+        const downloadLink = doc.createElement("a");
+        downloadLink.href = svgUrl;
+        downloadLink.download = "snapshot_"+title +".svg";
+        addSvgEl(doc.body, downloadLink)
+        downloadLink.click();
+        doc.body.removeChild(downloadLink);
+        downloadBtn.style.display = "block";
+    };
+
+    function setVisibility(elementId, lnIdx, visible = 0) {
+        const tooltips = getEl("gpl_" +elementId+"_"+lnIdx); // tooltip group
+
+        const str =(visible) ? "block" : "none";        
+        getEl("pl_"+elementId+"_"+lnIdx).style.display = str;
+        getEl("lgi_"+elementId+"_"+lnIdx).style.opacity = 0.3+0.7*visible;
+        if(tooltips!=null) tooltips.style.display = str;
+    }
+
+    function legClicked(event, numLines) {
+        //const svgLeg = getEl("sl_"+elementId); //event.srcElement.ownerSVGElement;
+        const legY = event.offsetY-getAttr(svgLeg, "y")+view(svgLeg)[1]; // x position inside plotting area
+        const lnIdx = floor((legY-legendYSpacing/2) / (legendFontSize+legendYSpacing));
+        const clkLn = getEl("pl_"+elementId+"_"+lnIdx);
+        if(clkLn == null)
+            return;
+        const visible = clkLn.style.display == "block";   
+    
+        // else
+        const startIdx = (numLines == 0) ? lnIdx : 0;
+        const endIdx = (numLines == 0) ? lnIdx+1 : numLines;
+        for(let idx = startIdx; idx < endIdx; ++idx) {  
+            if (!visible) { // make all visible again
+                setVisibility(elementId, idx, 1);
+            } else  if(idx != lnIdx || numLines == 0)  { // only keep selected one visible
+                setVisibility(elementId, idx);
+            };
+        };
+    };
+
+    function resizeSvg() {
+        const parentSz = size(svg); // current size of top svg
+        const childSz = size(svgDraw); // current size of current plot area
+        const newChildWidth = parentSz[2]-padding[0];
+        const newChildHeight = parentSz[3]-padding[1];
+    
+        if(childSz[2] != newChildWidth) {
+            setAttr(svgDraw, "width", newChildWidth); 
+            setAttr(svgBg, "width", newChildWidth);            
+            setAttr(svgTop, "width", newChildWidth);    
+            setAttr(svgBottom, "width", newChildWidth); 
+            if(svgLeg!=null) svgLeg.x.baseVal.value += newChildWidth - childSz[2];  
+            downloadBtn.transform.baseVal[0].matrix.e += newChildWidth - childSz[2];   
+        }
+        if(childSz[3] != newChildHeight) {
+            setAttr(svgDraw, "height",  newChildHeight);
+            setAttr(svgBg, "height", newChildHeight);    
+            setAttr(svgLeft, "height", newChildHeight); 
+            if(svgLeg!=null) {
+                let newLegHeight = newChildHeight -hLegendMargin;
+                newLegHeight = (newLegHeight > hLegendItems) ? hLegendItems : newLegHeight;
+                setAttr(svgLeg, "height", newLegHeight);
+                svgLeg.viewBox.baseVal.height = newLegHeight;
+            }
+        }
+        // update tooltip location which refers to top SVG and not scaled with drawing SVG
+        updateMarkerPos(elementId);
+    };
+
+    function scrollLegend(event){
+        const legSz = size(svgLeg);
+        const svgLegVw = view(svgLeg);   
+        const minScroll = 0;
+        const maxScroll = hLegendItems - legSz[3];
+        svgLegVw[1] +=  event.deltaY;
+    
+        if(svgLegVw[1] < minScroll)
+            svgLegVw[1] = minScroll;
+        if(svgLegVw[1] > maxScroll)
+            svgLegVw[1] = maxScroll;
+    
+        svgLeg.viewBox.baseVal.y = svgLegVw[1];
+        recleg.y.baseVal.value = svgLegVw[1];
+        return false;
+    };
+
+
+    function plotClicked(event) {
+        const drawSz = size(svgDraw);
+        const drawVw = view(svgDraw)
+        const scaleX = drawVw[2]/drawSz[2];
+        const scaleY = drawVw[3]/drawSz[3];
+        const plotX = (event.offsetX-drawSz[0]) * scaleX + drawVw[0]; // x position inside plotting viewBox
+        const plotY = (event.offsetY-drawSz[1]) * scaleY + drawVw[1]; // y position inside plotting viewBox
+        const dSnap = 6;
+        const detX = dSnap * scaleX;
+        const detY = dSnap * scaleY;
+        result = getNearestLine(elementId, plotX, plotY, detX, detY, linTip);
+        const closestEl = result.ele;
+        if(closestEl == null)
+            return;
+    
+        const intX = result.x;
+        const intY = result.y;
+        //const topX = (intX-vBx)/scaleX + drawX;
+        //const topY = (intY-vBy)/scaleY + drawY;
+    
+        const prefix = "pl_" + elementId;
+        const lnId = closestEl.id;
+        const lnIdx = lnId.slice(prefix.length, lnId.length); // substring includes "_"
+        const legendItem = getEl("lti_"+elementId+lnIdx);
+        const plotLine = getEl("pl_"+elementId+lnIdx);
+        const lineColor = getAttr(plotLine, "stroke");
+        const sourceCoord = convertCoord([intX, intY], pltLim, logScale);
+        let gl = getEl("gpl_" +elementId+lnIdx);
+        if(gl == null) { // create group for all tooltips on the same line (to be used in case line vibility is toggled)
+            //gl = addSvgEl(svg, "g", {"id":"gpl_" + elementId+lnIdx});
+            gl = addSvgEl(svgDraw, "g", {"id":"gpl_" + elementId+lnIdx});
+        }
+        const tooltip = addSvgEl(gl, "g", {"class":"marker_"+elementId});
+        transform(tooltip, [intX,intY], [scaleX, scaleY]);
+        const rect = addSvgRec(tooltip, 5, -9, 0, 32, lineColor, "rgb(223,223,223)", 1, rx=4);
+        
+        tooltip.onclick = (event) => {
+             if(event.srcElement.parentNode.tagName == "g") event.srcElement.parentNode.remove();
+             if(event.detail > 1)  setAxesLim(elementId, pltLim, pltLim, grid, gridMinorSet, logScale);// double click
+        };   
+        
+        let line = null;
+        if(legendItem != null) {
+            text = addSvgTxt(tooltip, legendItem.textContent, 7, -11, 12, "start", "Sans,Arial", "white" ); 
+            addSvgEl(null, text, {"font-weight":"bold"});
+            line = addSvgLn(tooltip, 5, -8, 5,-8, stroke="white");
+            addSvgEl(null, rect, {"y":-23, "height":46});
+        }
+    
+        addSvgTxt(tooltip, "x: " + num2eng([sourceCoord[0]]), 7, 4, 12, "start", "Sans,Arial", "white");
+        addSvgTxt(tooltip, "y: " + num2eng([sourceCoord[1]]), 7, 18, 12, "start", "Sans,Arial", "white");    
+                
+        const bbox = tooltip.getBBox();
+        addSvgEl(null, rect, {"width": bbox.width+4});
+        if(line != null)
+            setAttr(line, "x2", bbox.width+4+5);
+    
+        addSvgRec(tooltip, -2, -2, 4, 4, "black");
+        // add invisble circle to  capture clicks
+        addSvgEl(tooltip, "circle", {"r":dSnap, "fill":"none", "pointer-events": "visible"});
+    }
 };
 
 };

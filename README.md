@@ -38,7 +38,7 @@ Optional parameters:
    ":" dotted<br />
    "--" dash<br />
    "-." dash-dot<br />
-   "*" no-line (marker to be defined for scatter plots<br />
+   "*" no-line (marker to be defined for scatter plots)<br />
  - marker: String or string-array the defines the type of markers used for each line.<br />
    Valid option: <br />
    "" No markers<br />
@@ -52,14 +52,14 @@ Optional parameters:
    "sq" Square<br />
    "^" Triangle pointing up<br />
    "v" Triangle pointing down<br />
-   "\>" Triangle pointing right<br />
-   "\<" Triangle pointing left<br />
+   "tr" Triangle pointing right<br />
+   "tl" Triangle pointing left<br />
    "fsq" Filled square<br />
    "fo" Filled circle<br />
    "f^" Filled triangle pointing up<br />
    "fv" Filled triangle pointing down<br />
-   "f\>" Filled triangle pointing right<br />
-   "f\<" Filled triangle pointing left<br />
+   "ftr" Filled triangle pointing right<br />
+   "ftl" Filled triangle pointing left<br />
  - xlim: length-2 array that defines min and max range of x-axes
  - ylim: length-2 array that defines min and max range of y-axes
  - legend: String array that defines the legend names for each line

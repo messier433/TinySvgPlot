@@ -67,4 +67,4 @@ Optional parameters:
    Allowed values:<br />
    "northeastoutside" On the right side next to the plot area<br />
    "northeast" Inside the plot area<br />
- - freeTool: Boolean that defines if tooltips can be freely placed on line or snap to points (default: true)
+ - linTip: Boolean that defines if tooltips can be freely placed on line or snap to points (default: true)

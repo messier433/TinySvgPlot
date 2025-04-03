@@ -884,7 +884,7 @@ function plotSvg(elementId, x, y, numLines,
 
     function plotMouseDown(event) {
         let isPan = 0;
-        if(event.button == panButton || (event.button == zoomButton && event.shiftKey))
+        if(event.button == panButton || (event.button == zoomButton && event.ctrlKey))
             isPan = 1;
         else if (event.button != zoomButton)
             return;

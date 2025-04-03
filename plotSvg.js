@@ -284,9 +284,7 @@ function plotSvg(elementId, x, y, numLines,
             "x":pltAr[0], "y":pltAr[1]});
 
     const svgDraw = addSvgEl(svg, "svg", {"id":"sd_"+elementId, "preserveAspectRatio":"none",
-        "viewBox":"0 0 100 100", "overflow":"visible",
-        "width":pltAr[2], "height":pltAr[3], 
-        "x":pltAr[0], "y":pltAr[1]});
+        "viewBox":"0 0 100 100", "width":pltAr[2], "height":pltAr[3], "x":pltAr[0], "y":pltAr[1]});
     
 
     svgDraw.style.cursor = "crosshair";
@@ -353,10 +351,7 @@ function plotSvg(elementId, x, y, numLines,
     if(!varX && (numPtPerLine != x.length))
         throw new Error("Dimension must agree");
 
-    const clipDraw = addSvgEl(svgDraw, "clipPath", {"id":"cpg_"+elementId});
-    const clipRec = addSvgRec(clipDraw, 0, 0, "100%", "100%");
-    const cpr = addSvgEl(null, clipRec, {"id":"cpr_"+elementId});
-    const gp = addSvgEl(svgDraw, "g", {"id":"gp_"+elementId, "clip-path":"url(#cpg_" + elementId + ")" });
+    const gp = addSvgEl(svgDraw, "g", {"id":"gp_"+elementId });
     for(let lnIdx = 0; lnIdx < numLines; ++lnIdx) {
         const colorIdx = lnIdx % colorMapRGB.length;
         const dashStyle = Array.isArray(style) ? style[lnIdx] : style;
@@ -401,7 +396,7 @@ function plotSvg(elementId, x, y, numLines,
     //////////////////////////////
     // create drawing area
     //////////////////////////////
-    const plRec = addSvgRec(svgDraw, 0, 0, "100%", "100%", "none", "black", 1);
+    const plRec = addSvgRec(svgDraw, 0, 0, "100%", "100%", "none", "black");
     const plr = addSvgEl(null, plRec, {"id":"plr_"+elementId,"pointer-events": "visible"});
 
    
@@ -668,30 +663,46 @@ function plotSvg(elementId, x, y, numLines,
             gl = addSvgEl(svgDraw, "g", {"id":"gpl_" + elementId+lnIdx});
         }
         const tooltip = addSvgEl(gl, "g", {"class":"marker_"+elementId});
+        const lbl = addSvgEl(tooltip, "g");        
+        const rect = addSvgRec(lbl, 5, -37, 0, 32, lineColor, "rgb(223,223,223)", 1, rx=4);
         transform(tooltip, [intX,intY], [scaleX, scaleY]);
-        const rect = addSvgRec(tooltip, 5, -9, 0, 32, lineColor, "rgb(223,223,223)", 1, rx=4);
         
         tooltip.onclick = (event) => {
-             if(event.srcElement.parentNode.tagName == "g") event.srcElement.parentNode.remove();
-             if(event.detail > 1)  setAxesLim(pltLim);// double click
+            tooltip.remove();
+            if(event.detail > 1)  setAxesLim(pltLim);// double click
         };   
         
-        let line = null;
         if(legendItem != null) {
-            text = addSvgTxt(tooltip, legendItem.textContent, 7, -11, 12, "start", "Sans,Arial", "white" ); 
+            text = addSvgTxt(lbl, legendItem.textContent, 7, -38, 12, "start", "Sans,Arial", "white" ); 
             addSvgEl(null, text, {"font-weight":"bold"});
-            line = addSvgLn(tooltip, 5, -8, 5,-8, stroke="white");
-            addSvgEl(null, rect, {"y":-23, "height":46});
+            addSvgEl(null, rect, {"y":-51, "height":46});
         }
-    
-        addSvgTxt(tooltip, "x: " + num2eng([sourceCoord[0]]), 7, 4, 12, "start", "Sans,Arial", "white");
-        addSvgTxt(tooltip, "y: " + num2eng([sourceCoord[1]]), 7, 18, 12, "start", "Sans,Arial", "white");    
+
+        addSvgTxt(lbl, "x: " + num2eng([sourceCoord[0]]), 7, -24, 12, "start", "Sans,Arial", "white");
+        addSvgTxt(lbl, "y: " + num2eng([sourceCoord[1]]), 7, -10, 12, "start", "Sans,Arial", "white");    
                 
         const bbox = tooltip.getBBox();
         addSvgEl(null, rect, {"width": bbox.width+4});
-        if(line != null)
-            setAttr(line, "x2", bbox.width+4+5);
+        if(legendItem != null)
+            addSvgLn(lbl, 5, -36,  bbox.width+9,-36, stroke="white");
     
+        // check if label fits in drawing area
+        const bbcr =lbl.getBoundingClientRect();
+        let shiftLblX =  0;
+        let shiftLblY =  0;
+        let shiftLnX =  6;
+        let shiftLnY =  -6;
+        if(bbcr.right > drawSz[0]+drawSz[2]) {
+            shiftLblX =  -bbcr.width-10;
+            shiftLnX =  -6;
+        };
+        if(bbcr.y < drawSz[1]){
+            shiftLblY =  bbcr.height+10;
+            shiftLnY =  6;
+        }
+        transform(lbl, [shiftLblX,shiftLblY])
+        addSvgLn(tooltip, 0, 0,  shiftLnX,shiftLnY);
+
         addSvgRec(tooltip, -2, -2, 4, 4, "black");
         // add invisble circle to  capture clicks
         addSvgEl(tooltip, "circle", {"r":dSnap, "fill":"none", "pointer-events": "visible"});
@@ -721,7 +732,6 @@ function plotSvg(elementId, x, y, numLines,
     
         // shift plot-area rectangle to new viewbox
         addSvgEl(null, plr, {"x":shiftX, "y":shiftY});
-        addSvgEl(null, cpr, {"x":shiftX, "y":shiftY});
     
         // remove old grid before creating a new one
         const gridEl = doc.getElementsByClassName("cg_"+elementId);

@@ -11,7 +11,7 @@ Supported plot features
 Supported interactions:
 - auto resize to parent div dimensions
 - zoom-in via pressing right mouse button while defining zoom-in area
-- pan via middle mouse button or right mouse button with "Shift" pressed on keyboard
+- pan via middle mouse button or right mouse button with "Ctrl" pressed on keyboard
 - reset view via double left-click on plot area
 - left click tooltip placement and removal; linear interpolation on line and snap to exact points
 - Legend interaction<br />

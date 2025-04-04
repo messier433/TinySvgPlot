@@ -14,6 +14,7 @@ Supported interactions:
 - pan via middle mouse button or right mouse button with "Ctrl" pressed on keyboard
 - reset view via double left-click on plot area
 - left click tooltip placement and removal; linear interpolation on line and snap to exact points
+- left click + ctrl key on tooltip, changes the location of the tooltip label
 - Legend interaction<br />
   Single-click on legend item: toggle visibility of selected element<br />
   Double-click of legend item: if selected item is visible, hide all other items. If invisible, make all items visible<br />

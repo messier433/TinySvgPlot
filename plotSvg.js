@@ -584,6 +584,8 @@ function plotSvg(elementId, x, y, numLines,
         for(let idx = 0; idx < nLines; ++idx) {
             const line = polylines.children[idx];
             const pts = line.points;
+            if( line.style.display == "none") // dont consider hidden lines
+                continue;
             for(let idxPt = 1; idxPt < pts.length;++idxPt) {
                 const ptA = pts[idxPt-1];
                 const ptB = pts[idxPt];
@@ -664,7 +666,7 @@ function plotSvg(elementId, x, y, numLines,
         }
         const tooltip = addSvgEl(gl, "g", {"class":"marker_"+elementId});
         const lbl = addSvgEl(tooltip, "g");        
-        const rect = addSvgRec(lbl, 0, -32, 1, 32, lineColor, "rgb(223,223,223)", 1, rx=4);
+        const rect = addSvgRec(lbl, 0, -33, 1, 33, lineColor, "rgb(223,223,223)", 1, rx=4);
         transform(tooltip, [intX,intY], [scaleX, scaleY]);
         
         tooltip.onclick = (event) => {
@@ -677,9 +679,9 @@ function plotSvg(elementId, x, y, numLines,
         };   
         
         if(legendItem != null) {
-            text = addSvgTxt(lbl, legendItem.textContent, 2, -33, 12, "start", "Sans,Arial", "white" ); 
+            text = addSvgTxt(lbl, legendItem.textContent, 2, -35, 12, "start", "Sans,Arial", "white" ); 
             addSvgEl(null, text, {"font-weight":"bold"});
-            addSvgEl(null, rect, {"y":-46, "height":46});
+            addSvgEl(null, rect, {"y":-48, "height":48});
         }
 
         addSvgTxt(lbl, "x: " + num2eng([sourceCoord[0]]), 2, -19, 12, "start", "Sans,Arial", "white");

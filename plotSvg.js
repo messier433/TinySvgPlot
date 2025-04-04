@@ -664,44 +664,60 @@ function plotSvg(elementId, x, y, numLines,
         }
         const tooltip = addSvgEl(gl, "g", {"class":"marker_"+elementId});
         const lbl = addSvgEl(tooltip, "g");        
-        const rect = addSvgRec(lbl, 5, -37, 0, 32, lineColor, "rgb(223,223,223)", 1, rx=4);
+        const rect = addSvgRec(lbl, 0, -32, 1, 32, lineColor, "rgb(223,223,223)", 1, rx=4);
         transform(tooltip, [intX,intY], [scaleX, scaleY]);
         
         tooltip.onclick = (event) => {
-            tooltip.remove();
-            if(event.detail > 1)  setAxesLim(pltLim);// double click
+            if(event.ctrlKey)
+                setLblPos(1);
+            else {
+                tooltip.remove();
+                if(event.detail > 1)  setAxesLim(pltLim);// double click
+            }
         };   
         
         if(legendItem != null) {
-            text = addSvgTxt(lbl, legendItem.textContent, 7, -38, 12, "start", "Sans,Arial", "white" ); 
+            text = addSvgTxt(lbl, legendItem.textContent, 2, -33, 12, "start", "Sans,Arial", "white" ); 
             addSvgEl(null, text, {"font-weight":"bold"});
-            addSvgEl(null, rect, {"y":-51, "height":46});
+            addSvgEl(null, rect, {"y":-46, "height":46});
         }
 
-        addSvgTxt(lbl, "x: " + num2eng([sourceCoord[0]]), 7, -24, 12, "start", "Sans,Arial", "white");
-        addSvgTxt(lbl, "y: " + num2eng([sourceCoord[1]]), 7, -10, 12, "start", "Sans,Arial", "white");    
+        addSvgTxt(lbl, "x: " + num2eng([sourceCoord[0]]), 2, -19, 12, "start", "Sans,Arial", "white");
+        addSvgTxt(lbl, "y: " + num2eng([sourceCoord[1]]), 2, -5, 12, "start", "Sans,Arial", "white");    
                 
         const bbox = tooltip.getBBox();
-        addSvgEl(null, rect, {"width": bbox.width+4});
+        const bb = [bbox.width+4, bbox.height];
+        addSvgEl(null, rect, {"width": bb[0]});
         if(legendItem != null)
-            addSvgLn(lbl, 5, -36,  bbox.width+9,-36, stroke="white");
-    
+            addSvgLn(lbl, 0, -31,  bb[0],-31, stroke="white");
+        const lblLn = addSvgLn(tooltip, 0, 0,  6,-6);
+
         // check if label fits in drawing area
         const bbcr =lbl.getBoundingClientRect();
-        let shiftLblX =  0;
-        let shiftLblY =  0;
-        let shiftLnX =  6;
-        let shiftLnY =  -6;
-        if(bbcr.right > drawSz[0]+drawSz[2]) {
-            shiftLblX =  -bbcr.width-10;
-            shiftLnX =  -6;
+        let x = (bbcr.right > drawSz[0]+drawSz[2]); // can be changed by click event
+        let y = (bbcr.y < drawSz[1]); // can be changed by click event
+        setLblPos(false);
+
+        function setLblPos(rotate) { // x==0 is right, y==0 is down
+            let shiftLblX =  5;
+            let shiftLblY =  -5;
+            let scaleLnX =  1;
+            let scaleLnY =  1; 
+
+            if(rotate)
+                [x,y] = [!y, x];
+
+            if(x) {
+                shiftLblX =  -bb[0]-5;
+                scaleLnX =  -1;
+            };
+            if(y){
+                shiftLblY =  bb[1]+5;
+                scaleLnY =  -1;
+            };
+            transform(lbl, [shiftLblX,shiftLblY]);
+            transform(lblLn, null, [scaleLnX,scaleLnY]);
         };
-        if(bbcr.y < drawSz[1]){
-            shiftLblY =  bbcr.height+10;
-            shiftLnY =  6;
-        }
-        transform(lbl, [shiftLblX,shiftLblY])
-        addSvgLn(tooltip, 0, 0,  shiftLnX,shiftLnY);
 
         addSvgRec(tooltip, -2, -2, 4, 4, "black");
         // add invisble circle to  capture clicks

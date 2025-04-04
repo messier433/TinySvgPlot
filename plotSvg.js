@@ -259,11 +259,9 @@ function plotSvg(elementId, x, y, numLines,
     ///////////////////////////////
     const svgLeft= addSvgEl(svg, "svg", {"id":"sy_"+elementId, "width": pltAr[0], "y": pltAr[1], "overflow":"visible", "height":pltAr[3]});
     if(ylabel.length>0) { 
-        let text = addSvgEl(svgLeft, "text", {"writing-mode":"sideways-lr", 
-        "fill":"black", "font-size":axesLblFontSize, "text-anchor":"middle", 
-        "font-family":"Sans,Arial", "stroke-width": 1, "y":"50%", "x":(pltAr[0] - axesLblFontSize*4 - fontSpacing) 
-        });  
-        text.append(doc.createTextNode(ylabel));
+        let text = addSvgTxt(svgLeft, ylabel, pltAr[0] - axesLblFontSize, "50%", axesLblFontSize);
+        addSvgEl(null, text,  {"writing-mode":"vertical-rl", "transform-origin": "center"});
+        transform(text, null, [-1,-1])
     };
 
     ///////////////////////////////

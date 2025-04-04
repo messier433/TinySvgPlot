@@ -2,9 +2,9 @@
 * Copyright (c) 2025, Thomas Baier
 * All rights reserved. (MIT Licensed)
 *
-* plotSvg.js (YaJsSvgPlot)
+* plotSvg.js (TinySvgPlot)
 * A small, interactive plotting tool
-* https://github.com/messier433/YaJsSvgPlot
+* https://github.com/messier433/TinySvgPlot
 */
 {
 const round = Math.round;
@@ -469,6 +469,7 @@ function plotSvg(elementId, x, y, numLines,
 
     function downloadSvg() {
         downloadBtn.style.display = "none"; // hide button for screenshot
+        svgDraw.style.cursor = "auto"; // change cursor style over plot area to avoid confusion that this is a screenshot
         const svgSz = size(svg); // get current size of svg
         const outerStr = "\<svg width=\"" + svgSz[2] + "\" height=\""+svgSz[3]+"\" xmlns=\""+ns+"\"\>";
         const svgBlob = new Blob([outerStr, svg.innerHTML, "\</svg\>"], {type:"image/svg+xml;charset=utf-8"});
@@ -480,15 +481,16 @@ function plotSvg(elementId, x, y, numLines,
         downloadLink.click();
         doc.body.removeChild(downloadLink);
         downloadBtn.style.display = "block";
+        svgDraw.style.cursor = "crosshair";
     };
 
     function setVisibility(elementId, lnIdx, visible = 0) {
-        const tooltips = getEl("gpl_" +elementId+"_"+lnIdx); // tooltip group
+        const datatips = getEl("gpl_" +elementId+"_"+lnIdx); // datatip group
 
         const str =(visible) ? "block" : "none";        
         getEl("pl_"+elementId+"_"+lnIdx).style.display = str;
         getEl("lgi_"+elementId+"_"+lnIdx).style.opacity = 0.3+0.7*visible;
-        if(tooltips!=null) tooltips.style.display = str;
+        if(datatips!=null) datatips.style.display = str;
     }
 
     function legClicked(event, numLines) {
@@ -540,7 +542,7 @@ function plotSvg(elementId, x, y, numLines,
                 svgLeg.viewBox.baseVal.height = newLegHeight;
             }
         }
-        // update tooltip location which refers to top SVG and not scaled with drawing SVG
+        // update datatip location which refers to top SVG and not scaled with drawing SVG
         updateMarkerPos();
     };
 
@@ -660,20 +662,20 @@ function plotSvg(elementId, x, y, numLines,
         const lineColor = getAttr(plotLine, "stroke");
         const sourceCoord = convertCoord([intX, intY], pltLim, logScale);
         let gl = getEl("gpl_" +elementId+lnIdx);
-        if(gl == null) { // create group for all tooltips on the same line (to be used in case line vibility is toggled)
+        if(gl == null) { // create group for all datatips on the same line (to be used in case line vibility is toggled)
             //gl = addSvgEl(svg, "g", {"id":"gpl_" + elementId+lnIdx});
             gl = addSvgEl(svgDraw, "g", {"id":"gpl_" + elementId+lnIdx});
         }
-        const tooltip = addSvgEl(gl, "g", {"class":"marker_"+elementId});
-        const lbl = addSvgEl(tooltip, "g");        
+        const datatip = addSvgEl(gl, "g", {"class":"marker_"+elementId});
+        const lbl = addSvgEl(datatip, "g");        
         const rect = addSvgRec(lbl, 0, -33, 1, 33, lineColor, "rgb(223,223,223)", 1, rx=4);
-        transform(tooltip, [intX,intY], [scaleX, scaleY]);
+        transform(datatip, [intX,intY], [scaleX, scaleY]);
         
-        tooltip.onclick = (event) => {
+        datatip.onclick = (event) => {
             if(event.ctrlKey)
                 setLblPos(1);
             else {
-                tooltip.remove();
+                datatip.remove();
                 if(event.detail > 1)  setAxesLim(pltLim);// double click
             }
         };   
@@ -687,17 +689,17 @@ function plotSvg(elementId, x, y, numLines,
         addSvgTxt(lbl, "x: " + num2eng([sourceCoord[0]]), 2, -19, 12, "start", "Sans,Arial", "white");
         addSvgTxt(lbl, "y: " + num2eng([sourceCoord[1]]), 2, -5, 12, "start", "Sans,Arial", "white");    
                 
-        const bbox = tooltip.getBBox();
+        const bbox = datatip.getBBox();
         const bb = [bbox.width+4, bbox.height];
         addSvgEl(null, rect, {"width": bb[0]});
         if(legendItem != null)
             addSvgLn(lbl, 0, -31,  bb[0],-31, stroke="white");
-        const lblLn = addSvgLn(tooltip, 0, 0,  6,-6);
+        const lblLn = addSvgLn(datatip, 0, 0,  6,-6);
 
         // check if label fits in drawing area
         const bbcr =lbl.getBoundingClientRect();
-        let x = (bbcr.right > drawSz[0]+drawSz[2]); // can be changed by click event
-        let y = (bbcr.y < drawSz[1]); // can be changed by click event
+        let x = (bbcr.right+5+mainDiv.offsetLeft > drawSz[0]+drawSz[2]); // can be changed by click event
+        let y = (bbcr.y-5-mainDiv.offsetTop < drawSz[1]); // can be changed by click event
         setLblPos(false);
 
         function setLblPos(rotate) { // x==0 is right, y==0 is down
@@ -721,22 +723,22 @@ function plotSvg(elementId, x, y, numLines,
             transform(lblLn, null, [scaleLnX,scaleLnY]);
         };
 
-        addSvgRec(tooltip, -2, -2, 4, 4, "black");
+        addSvgRec(datatip, -2, -2, 4, 4, "black");
         // add invisble circle to  capture clicks
-        addSvgEl(tooltip, "circle", {"r":dSnap, "fill":"none", "pointer-events": "visible"});
+        addSvgEl(datatip, "circle", {"r":dSnap, "fill":"none", "pointer-events": "visible"});
     };
 
     function updateMarkerPos() {
-        const tooltips = doc.getElementsByClassName("marker_" + elementId);
-        // update tooltip location which refers to top SVG and not scaled with drawing SVG
-        for(let idx = 0; idx<tooltips.length; ++idx) {
+        const datatips = doc.getElementsByClassName("marker_" + elementId);
+        // update datatip location which refers to top SVG and not scaled with drawing SVG
+        for(let idx = 0; idx<datatips.length; ++idx) {
             const svgSz = size(svgDraw);
             const svgVw = view(svgDraw)
             const scaleX = svgVw[2]/svgSz[2];
             const scaleY = svgVw[3]/svgSz[3];
     
-            tooltips[idx].transform.baseVal[1].matrix.a = scaleX; 
-            tooltips[idx].transform.baseVal[1].matrix.d = scaleY; 
+            datatips[idx].transform.baseVal[1].matrix.a = scaleX; 
+            datatips[idx].transform.baseVal[1].matrix.d = scaleY; 
         }    
     };
 

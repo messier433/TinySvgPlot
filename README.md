@@ -1,4 +1,4 @@
-<a href="https://messier433.github.io/YaJsSvgPlot/example.html" target="_blank"><img src="https://github.com/user-attachments/assets/fd9ca9d8-7afe-4fd7-a208-0aa0d71a2484"/></a>
+<a href="https://messier433.github.io/TinySvgPlot/example.html" target="_blank"><img src="https://github.com/user-attachments/assets/fd9ca9d8-7afe-4fd7-a208-0aa0d71a2484"/></a>
 Supported plot features
 - multiple line plots with different markers and dash styles
 - scatter plot (no lines)
@@ -13,8 +13,8 @@ Supported interactions:
 - zoom-in via pressing right mouse button while defining zoom-in area
 - pan via middle mouse button or right mouse button with "Ctrl" pressed on keyboard
 - reset view via double left-click on plot area
-- left click tooltip placement and removal; linear interpolation on line and snap to exact points
-- left click + ctrl key on tooltip, changes the location of the tooltip label
+- left click datatip placement and removal; linear interpolation on line and snap to exact points
+- left click + ctrl key on datatip, changes the location of the tooltip label
 - Legend interaction<br />
   Single-click on legend item: toggle visibility of selected element<br />
   Double-click of legend item: if selected item is visible, hide all other items. If invisible, make all items visible<br />

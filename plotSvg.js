@@ -11,6 +11,7 @@ const round = Math.round;
 const floor = Math.floor;
 const log10 = Math.log10;
 const ceil = Math.ceil;
+const isArray = Array.isArray;
 const Inf = Infinity;
 const doc =document;
 
@@ -38,7 +39,7 @@ const colorMapRGB =  ["rgb(0,114,190)", "rgb(218,83,25)", "rgb(238,178,32)",
 const ns = "http://www.w3.org/2000/svg";
 
 function plotSvg(elementId, x, y, numLines, 
-{title = "", subtitle = "", xlabel = "", ylabel="", xlim=[], ylim=[], 
+{color = "", title = "", subtitle = "", xlabel = "", ylabel="", xlim=[], ylim=[], 
     style="-", marker="", legend = [], xScale = "lin", yScale = "lin", grid = true, 
     gridMinor = [], legendLocation = 'northeastoutside', linTip = true 
 }={}
@@ -176,19 +177,16 @@ function plotSvg(elementId, x, y, numLines,
         addSvgEl(null, recleg, {"id":"rect_leg_"+elementId});
         // create legend items
         for(let lnIdx = 0; lnIdx < nLegend; ++lnIdx) {
-            const colorIdx = lnIdx % colorMapRGB.length;
             const yOffset = lnIdx * (legendFontSize + legendYSpacing) +  legendYSpacing;    
             const legItemGroup = new addSvgEl(svgLeg, "g", {"id": "lgi_"+elementId+"_"+lnIdx});
-  
+      
             // legend labels
             const textEl = addSvgEl(legItemGroup, "text", {"id": "lti_"+elementId+"_"+lnIdx, "class":"cll", 
                 "x":legendXSpacing+legendLineLength+legendXSpacing, "y":yOffset+legendFontSize/2});
             // legend lines
             const y0 = yOffset+legendFontSize/2;
-            addSvgEl(legItemGroup, "polyline", {"id": "lli_"+elementId+"_"+lnIdx, "stroke": colorMapRGB[colorIdx],
-                "points":  legendXSpacing +  "," +y0 + " " + (legendXSpacing+legendLineLength/2) +  "," +y0 + 
-                " " + (legendXSpacing+legendLineLength) +  "," +y0
-            }); 
+            addSvgPolyLn(legItemGroup, legendXSpacing +  "," +y0 + " " + (legendXSpacing+legendLineLength/2) +  "," +y0 + 
+                                        " " + (legendXSpacing+legendLineLength) +  "," +y0);
             //setAttr(lli, "id", "lli_"+elementId+"_"+lnIdx);
             let str = "";
             if(lnIdx < legendTmp.length) {
@@ -352,8 +350,11 @@ function plotSvg(elementId, x, y, numLines,
     const gp = addSvgEl(svgDraw, "g", {"id":"gp_"+elementId });
     for(let lnIdx = 0; lnIdx < numLines; ++lnIdx) {
         const colorIdx = lnIdx % colorMapRGB.length;
-        const dashStyle = Array.isArray(style) ? style[lnIdx] : style;
+        const dashStyle = isArray(style) ? style[lnIdx] : style;
         const markerStyle = "url(#m" + (Array.isArray(marker) ? marker[lnIdx] : marker) +"_"+elementId+ ")";  
+        const colorStr = isArray(color) ? ((lnIdx < color.length) ? color[lnIdx] : "") : color;
+        const colorSel = (colorStr == "") ?  colorMapRGB[colorIdx] : colorStr;
+
         let dashStr = "";
         let strokeWidth = 2;
         switch(dashStyle) {            
@@ -370,16 +371,15 @@ function plotSvg(elementId, x, y, numLines,
                 strokeWidth = 0;
         };
 
-        const poly = addSvgEl(gp, "polyline", {"id": "pl_" +elementId+"_"+lnIdx,
-            "stroke": colorMapRGB[colorIdx], "stroke-dasharray": dashStr,
+        const poly = addSvgPolyLn(gp, "", colorSel, dashStr, strokeWidth);
+        addSvgEl(null, poly, {"id": "pl_" +elementId+"_"+lnIdx,
             "marker-start":markerStyle, "marker-mid":markerStyle, "marker-end":markerStyle, 
-            "stroke-width":strokeWidth, "vector-effect":"non-scaling-stroke", "fill":"none"
-        });
+            "stroke-width":strokeWidth});
         //poly.setAttribute("shape-rendering","optimizeSpeed ");
         if(svgLeg!=null) {
-            const markerStyle = "url(#ml" + (Array.isArray(marker) ? marker[lnIdx] : marker) +"_"+elementId+ ")";  
+            const markerStyle = "url(#ml" + (isArray(marker) ? marker[lnIdx] : marker) +"_"+elementId+ ")";  
             addSvgEl(null, svgLeg.childNodes[lnIdx+2].childNodes[1], {"stroke-dasharray": dashStr,
-                "marker-mid":markerStyle, "stroke-width":strokeWidth});
+                "marker-mid":markerStyle, "stroke-width":strokeWidth, "stroke": colorSel});
         };
 
         for(let ptIdx = 0; ptIdx < numPtPerLine; ++ptIdx) {
@@ -411,8 +411,8 @@ function plotSvg(elementId, x, y, numLines,
     const downloadBtn = addSvgEl(svgTop, "g", {"id":"bd_"+elementId, 
         "stroke-width":2,"stroke-linecap":"round", "stroke-linejoin":"round","class":"b", "pointer-events": "visible"});
     transform(downloadBtn, [(pltAr[2] - 18), (pltAr[1] - 24)]);
-    addSvgEl(downloadBtn, "polyline", {"stroke":"black", "fill":"none","points":"8,0 8,16 2,9 8,16 14,9"});
-    addSvgEl(downloadBtn, "polyline", {"stroke":"black", "fill":"none","points":"0,17 0,20 16,20 16,17"});
+    addSvgPolyLn(downloadBtn, "8,0 8,16 2,9 8,16 14,9");
+    addSvgPolyLn(downloadBtn, "0,17 0,20 16,20 16,17");
     addSvgRec(downloadBtn, 0, 0, 21, 21)
     downloadBtn.onclick = () => {downloadSvg()};
 
@@ -1031,6 +1031,11 @@ function plotSvg(elementId, x, y, numLines,
     }
     function addSvgLn(parent, x1, y1, x2,y2, stroke="black", strokedasharray="", stroke_width=1) {
         return addSvgEl(parent, "line", {"x1":x1, "y1":y1,"x2":x2, "y2":y2,
+                "stroke":stroke, "stroke-width": stroke_width, "stroke-dasharray": strokedasharray, "vector-effect":"non-scaling-stroke"
+        });  
+    };
+    function addSvgPolyLn(parent, points="", stroke="black", strokedasharray="", stroke_width=2) {
+        return addSvgEl(parent, "polyline", {"points":points, "fill": "none",
                 "stroke":stroke, "stroke-width": stroke_width, "stroke-dasharray": strokedasharray, "vector-effect":"non-scaling-stroke"
         });  
     };

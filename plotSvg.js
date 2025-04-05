@@ -19,7 +19,7 @@ const panButton = 1; // 0 is left mouse button; 1: middle mouse button (recommen
 const axesLblFontSize = 12;
 const legendFontSize = 10;
 const legendFont = "Lucida Sans Typewriter"; // needs to be a monospace font!
-const legendLineLength = 20; // number of pixels for the line length in the legend
+const legendLineLength = 30; // number of pixels for the line length in the legend
 const legendXSpacing = 4; // number of pixels between legend box, line and text
 const legendYSpacing = 4; // number of pixels between two entries
 const maxLegendWidth = 400;
@@ -143,6 +143,7 @@ function plotSvg(elementId, x, y, numLines,
     let legFill = "none";
     let svgLeg = null; // define already here
     let recleg  = null;
+    let defsLeg  = null;
     if(legend.length>0 && numLines > 0 && x.length > 0) {  
         // set legend dimensions depending on location  
         let yLegend = pltArYOffset;      
@@ -152,15 +153,12 @@ function plotSvg(elementId, x, y, numLines,
             legFill="white";
         }
         const hLegendMax = plotHeight - hLegendMargin;   
-        const defs = addSvgEl(svg, "defs");
         // draw legend box (change width later)
         svgLeg = addSvgEl(gleg, "svg", {"id":"sl_"+elementId});
+        defsLeg = addSvgEl(svgLeg, "defs");
         // add legend already here to calculate width
         // will be moved again at the end of the function 
         addSvgEl(svg,gleg);             
-        // define legend line  
-        addSvgEl(defs, "line", {"id":"ll_"+elementId, "x1":0, "y1":0,"x2":legendLineLength,"y2":0, 
-            "stroke-width":2,"vector-effect":"non-scaling-stroke"});
 
         let nLegend = numLines; 
         let legendTmp = legend;
@@ -179,22 +177,24 @@ function plotSvg(elementId, x, y, numLines,
         // create legend items
         for(let lnIdx = 0; lnIdx < nLegend; ++lnIdx) {
             const colorIdx = lnIdx % colorMapRGB.length;
-            const yOffset = lnIdx * (legendFontSize + legendYSpacing) +  legendYSpacing;
-    
+            const yOffset = lnIdx * (legendFontSize + legendYSpacing) +  legendYSpacing;    
             const legItemGroup = new addSvgEl(svgLeg, "g", {"id": "lgi_"+elementId+"_"+lnIdx});
-
-            // legend lines
-            addSvgEl(legItemGroup, "use", {"id": "lli_"+elementId+"_"+lnIdx, "x":legendXSpacing, "y":yOffset+legendFontSize/2,
-                "href":"#ll_"+elementId, "stroke":colorMapRGB[colorIdx]});
-   
+  
             // legend labels
             const textEl = addSvgEl(legItemGroup, "text", {"id": "lti_"+elementId+"_"+lnIdx, "class":"cll", 
                 "x":legendXSpacing+legendLineLength+legendXSpacing, "y":yOffset+legendFontSize/2});
+            // legend lines
+            const y0 = yOffset+legendFontSize/2;
+            addSvgEl(legItemGroup, "polyline", {"id": "lli_"+elementId+"_"+lnIdx, "stroke": colorMapRGB[colorIdx],
+                "points":  legendXSpacing +  "," +y0 + " " + (legendXSpacing+legendLineLength/2) +  "," +y0 + 
+                " " + (legendXSpacing+legendLineLength) +  "," +y0
+            }); 
+            //setAttr(lli, "id", "lli_"+elementId+"_"+lnIdx);
             let str = "";
             if(lnIdx < legendTmp.length) {
                 str = legendTmp[lnIdx];
             };
-            textEl.append(doc.createTextNode(str));  
+            textEl.append(doc.createTextNode(str));              
         }
 
         let bbox = gleg.getBBox();
@@ -339,7 +339,7 @@ function plotSvg(elementId, x, y, numLines,
         addMarker("|", [addSvgLn(null, 0, -5, 0, 5, "","","")]);
         addMarker("sq", [addSvgRec(null,-5,-5,10,10,"", "", "")], 1);
         addMarker("^", [addSvgEl(null, "polygon", {"points":"-5 3, 0 -5, 5 3"})], 1);
-        addMarker("v", [addSvgEl(null, "polygon", {"points":"-5 -4, 0 5, 5 -4"})], 1);
+        addMarker("v", [addSvgEl(null, "polygon", {"points":"-5 -3, 0 5, 5 -3"})], 1);
         addMarker("tr", [addSvgEl(null, "polygon", {"points":"-3 -5, 5 0, -3 5"})], 1);
         addMarker("tl", [addSvgEl(null, "polygon", {"points":"-5 0, 3 5, 3 -5"})], 1);
     }
@@ -364,19 +364,23 @@ function plotSvg(elementId, x, y, numLines,
                 dashStr = "12 6";
                 break;
             case "-.":
-                dashStr = "9 3 3 3";
+                dashStr = "0 1.5 9 3 3 2.5";
                 break;
             case "*":
                 strokeWidth = 0;
-        }
+        };
 
-
-        const poly = addSvgEl(gp, "polyline", {"class": "l",  "id": "pl_" +elementId+"_"+lnIdx,
+        const poly = addSvgEl(gp, "polyline", {"id": "pl_" +elementId+"_"+lnIdx,
             "stroke": colorMapRGB[colorIdx], "stroke-dasharray": dashStr,
             "marker-start":markerStyle, "marker-mid":markerStyle, "marker-end":markerStyle, 
             "stroke-width":strokeWidth, "vector-effect":"non-scaling-stroke", "fill":"none"
         });
         //poly.setAttribute("shape-rendering","optimizeSpeed ");
+        if(svgLeg!=null) {
+            const markerStyle = "url(#ml" + (Array.isArray(marker) ? marker[lnIdx] : marker) +"_"+elementId+ ")";  
+            addSvgEl(null, svgLeg.childNodes[lnIdx+2].childNodes[1], {"stroke-dasharray": dashStr,
+                "marker-mid":markerStyle, "stroke-width":strokeWidth});
+        };
 
         for(let ptIdx = 0; ptIdx < numPtPerLine; ++ptIdx) {
             const ptx = varX ? x[lnIdx*numPtPerLine  + ptIdx] : x[ptIdx];
@@ -387,7 +391,7 @@ function plotSvg(elementId, x, y, numLines,
                 point.x = 100*(ptx-pltLim[0])/ pltLim[2];
                 point.y = 100-100*(pty-pltLim[1]) / pltLim[3];
                 poly.points.appendItem(point);
-            }
+            };
         };                
     };
 
@@ -461,6 +465,10 @@ function plotSvg(elementId, x, y, numLines,
         for(let idx = 0; idx < elements.length; ++idx)
             addSvgEl(markerGrp, elements[idx]);
     
+        // copy to legend
+        const markerClone = addSvgEl(defsLeg, marker.cloneNode(true), {"id":"ml"+id+"_"+elementId});
+        setAttr(markerClone.childNodes[0], "class", "");
+
         // copy but fill
         if(addSolid) addSvgEl(defsDraw, marker.cloneNode(true), {"id":"mf"+id+"_"+elementId, "fill":"context-stroke"});
     };

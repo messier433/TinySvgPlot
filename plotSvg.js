@@ -43,7 +43,8 @@ const ns = "http://www.w3.org/2000/svg";
 function plotSvg(elementId, x, y, numLines, 
 {color = "", title = "", subtitle = "", xlabel = "", ylabel="", xlim=[], ylim=[], 
     style="-", marker="", legend = [], xScale = "lin", yScale = "lin", grid = true, 
-    gridMinor = [], xtick = [], ytick = [], legendLocation = 'northeastoutside', linTip = true 
+    gridMinor = [], xtick = [], ytick = [], xticklbl=[], yticklbl=[], 
+    xtickangle = 0, ytickangle = 0,legendLocation = 'northeastoutside', linTip = true 
 }={}
 )
 {      
@@ -62,7 +63,7 @@ function plotSvg(elementId, x, y, numLines,
             };
         };
         if(xtick.length > 0)
-            xtick = xtick.map(log10); // should we remove NaN here?
+            xtick = xtick.map(log10); 
 
         logScale[0] = true;
     };
@@ -81,7 +82,7 @@ function plotSvg(elementId, x, y, numLines,
         };
         
         if(ytick.length > 0)
-            ytick = ytick.map(log10); // should we remove NaN here?
+            ytick = ytick.map(log10);
         logScale[1] = true;
     };
 
@@ -809,8 +810,10 @@ function plotSvg(elementId, x, y, numLines,
     };
     
     function createGrid(lim){ 
-        tickOvr = [xtick, ytick]           
-        for(let axIdx = 0; axIdx<2;++axIdx){
+        tickOvr = [xtick, ytick];
+        ticklbl = [xticklbl, yticklbl];
+        tickangle = [xtickangle, ytickangle];
+        for(let axIdx = 0; axIdx<2;++axIdx)  {
             const svgAx = (axIdx) ? svgLeft : svgBottom; 
             const tick = calcTick(lim[2+axIdx], nTicksMax[axIdx], logScale[axIdx]);
             const max = lim[axIdx]+lim[2+axIdx];
@@ -821,7 +824,7 @@ function plotSvg(elementId, x, y, numLines,
             // actual number of ticks       
             const isManTick = (tickOvr[axIdx].length > 0);     
             const ticks = isManTick ? tickOvr[axIdx] : linspace(minTick,tick,maxTick);
-            const tickLabel = logScale[axIdx] ? num2eng(ticks.map((x) => 10 ** x)) : num2eng(ticks);
+            const tickLabel = (ticklbl[axIdx].length > 0) ? ticklbl[axIdx] : (logScale[axIdx] ? num2eng(ticks.map((x) => 10 ** x)) : num2eng(ticks));
             // draw ticks, labels and grid lines
             const dTick = 100 * tick/lim[2+axIdx]; 
     
@@ -847,11 +850,12 @@ function plotSvg(elementId, x, y, numLines,
                 const tickPos = (axIdx >0) ? 100-pos[idx] : pos[idx];
                 const c = (axIdx) ? [0,tickPos] : [tickPos, 0];
                 const tc = (axIdx) ? [size(svgAx)[2] - axesLblFontSize*0.5,tickPos+"%"] : [tickPos+"%", axesLblFontSize*0.9];
-                 c
                 let textEl = null; 
                 if(pos[idx] >= 0 && (idx > 0 || tickOvr)) {
                     textEl = addSvgTxt(svgAx, tickLabel[idx], tc[0], tc[1], axesLblFontSize, (axIdx) ? "end" : "middle");    
-                    addSvgEl(null,textEl,{"dominant-baseline":"central", "class":"cg_" +elementId});
+                    addSvgEl(null,textEl,{"dominant-baseline":"central", "class":"cg_" +elementId,
+                        "transform":"rotate(" + tickangle[axIdx] + ")", "transform-origin": tc[0] + " "+  tc[1]
+                    });
                 }
                 
                 addSvgEl(svgBg, "use", {"href":"#mg" + axIdx + "_"+elementId, "x":c[0], "y":c[1], 

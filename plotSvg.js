@@ -29,6 +29,8 @@ const titleFontSize = 24;
 const subTitleFontSize = 12;
 const nTicksMax = [10, 10]; // max ticks (will be adjusted for short tick labels)
 const nMinorTicksMax = [10, 10]; // minor ticks  (max value; will be adjusted)
+const tickLength = 8;
+const minorTickLength = tickLength/2;
 const normTicks = [1, 2, 5, 10];
 const xAxesSpacing = axesLblFontSize*4;
 const yAxesSpacing = axesLblFontSize*2;
@@ -41,7 +43,7 @@ const ns = "http://www.w3.org/2000/svg";
 function plotSvg(elementId, x, y, numLines, 
 {color = "", title = "", subtitle = "", xlabel = "", ylabel="", xlim=[], ylim=[], 
     style="-", marker="", legend = [], xScale = "lin", yScale = "lin", grid = true, 
-    gridMinor = [], legendLocation = 'northeastoutside', linTip = true 
+    gridMinor = [], xtick = [], ytick = [], legendLocation = 'northeastoutside', linTip = true 
 }={}
 )
 {      
@@ -59,6 +61,9 @@ function plotSvg(elementId, x, y, numLines,
                 xlim[1] =  (xlim[1] == -Inf) ? 0 : xlim[1];  
             };
         };
+        if(xtick.length > 0)
+            xtick = xtick.map(log10); // should we remove NaN here?
+
         logScale[0] = true;
     };
 
@@ -74,6 +79,9 @@ function plotSvg(elementId, x, y, numLines,
                 ylim[1] =  (ylim[1] == -Inf) ? 0 : ylim[1];  
             };
         };
+        
+        if(ytick.length > 0)
+            ytick = ytick.map(log10); // should we remove NaN here?
         logScale[1] = true;
     };
 
@@ -282,27 +290,32 @@ function plotSvg(elementId, x, y, numLines,
     const svgDraw = addSvgEl(svg, "svg", {"id":"sd_"+elementId, "preserveAspectRatio":"none",
         "viewBox":"0 0 100 100", "width":pltAr[2], "height":pltAr[3], "x":pltAr[0], "y":pltAr[1]});
     
-
     svgDraw.style.cursor = "crosshair";
     ////////////////////////////
     // Draw grid and labels
     ////////////////////////////
-    let gridMinorSet = [false, false];
+    let gridMinorSet = [0, 0];
+
     if(gridMinor.length < 1) {
         // enable minor grid by default for log axes
         gridMinorSet[0] = xScale == 'log';
         gridMinorSet[1] = yScale == 'log';
     } else {
-        gridMinorSet[0] = gridMinor[0];
-        if(gridMinor.length > 1)
+        if(gridMinor.length > 1) {
+            gridMinorSet[0] = gridMinor[0];
             gridMinorSet[1] = gridMinor[1];
-        else
-            gridMinorSet[1] = gridMinor[1];
-    }          
+        } else {
+            gridMinorSet[0] = gridMinor;
+            gridMinorSet[1] = gridMinor;
+        };
+    };     
 
     const xTick = calcTick(pltLim[2], nTicksMax[0], logScale[0]);	
     const yTick = calcTick(pltLim[3], nTicksMax[1], logScale[1]);
-        
+    const autoTick = [xtick.length == 0, ytick.length == 0];
+    const tickMinorSet = [(logScale[0] || gridMinorSet[0]) && autoTick[0], (logScale[1] || gridMinorSet[1]) && autoTick[1]];
+    gridMinorSet = [gridMinorSet[0] && autoTick[0],gridMinorSet[1] && autoTick[1]]; // minor grid currently not supported with custom grid
+    
     if(xlim.length < 1) {
         if (pltLim[2]/xTick >= 4) {
             // change starting points based on tick
@@ -440,9 +453,8 @@ function plotSvg(elementId, x, y, numLines,
                 if(isFinite(vals[len])) {
                     min = (vals[len] < min) ? vals[len] : min;
                     max = (vals[len] > max) ? vals[len] : max;
-                }
-            }
-    
+                };
+            };    
             lim = [min, max]; 
         };
         if(lim[0] == lim[1]) {
@@ -450,8 +462,8 @@ function plotSvg(elementId, x, y, numLines,
             lim[1] = lim[1] + 0.5;
         };
         return lim;
-    };
-    
+    };    
+
     function addMarker(id, elements, addSolid=0) {
         //"o","+", "*", ".", "x", "_", "|", "sq"
         const marker = addSvgEl(defsDraw, "marker", {"id":"m"+id+"_"+elementId,
@@ -569,6 +581,7 @@ function plotSvg(elementId, x, y, numLines,
         return false;
     };
 
+    // converts plot coordiantes back to data source
     function convertCoord(point, pltLim, logScale) {
         x = point[0] / 100 * pltLim[2] + pltLim[0];
         y = (1-point[1] / 100) * pltLim[3] + pltLim[1];
@@ -795,78 +808,69 @@ function plotSvg(elementId, x, y, numLines,
         setAxesLim(nlim);
     };
     
-    function createGrid(lim){            
+    function createGrid(lim){ 
+        tickOvr = [xtick, ytick]           
         for(let axIdx = 0; axIdx<2;++axIdx){
-            const svgAx = (axIdx > 0) ? svgLeft : svgBottom; 
+            const svgAx = (axIdx) ? svgLeft : svgBottom; 
             const tick = calcTick(lim[2+axIdx], nTicksMax[axIdx], logScale[axIdx]);
             const max = lim[axIdx]+lim[2+axIdx];
             // next major ticks
-            const minTick = ceil(lim[axIdx]/tick) * tick;
-            const maxTick = floor(max/tick) * tick;
+            const minTick = (ceil(lim[axIdx]/tick)-1) * tick; // -1 to draw extend the minor grid
+            const maxTick = (floor(max/tick)) * tick;
     
-            // offset in the plot in pixel
-            const offset = (axIdx > 0) ? lim[axIdx]+lim[axIdx+2] - maxTick : minTick - lim[axIdx];
-            const tickOffset = 100 * (offset)/lim[2+axIdx];
-    
-            // actual number of ticks
-            const nTicks = round((maxTick-minTick)/tick); // rounding should not be required, just put in case of small numerical errors
-            
-            const tickLength = 8;
-            const minorTickLength = tickLength/2;
-    
-            let tickLabel = Array();
-            if(logScale[axIdx]) {
-                tickLabel = num2eng(decades(minTick,tick,maxTick));
-            } else {
-                tickLabel = num2eng(linspace(minTick,tick,maxTick));
-            };
-     
+            // actual number of ticks       
+            const isManTick = (tickOvr[axIdx].length > 0);     
+            const ticks = isManTick ? tickOvr[axIdx] : linspace(minTick,tick,maxTick);
+            const tickLabel = logScale[axIdx] ? num2eng(ticks.map((x) => 10 ** x)) : num2eng(ticks);
             // draw ticks, labels and grid lines
             const dTick = 100 * tick/lim[2+axIdx]; 
     
             // axis labels and grid
             const defsBg =  addSvgEl(svgBg, "defs", {"class":"cg_" +elementId});
             const defsg =  addSvgEl(defsBg, "g", {"id": "mg" + axIdx + "_" + elementId});
-            const nMinorTicks = (logScale[axIdx] || gridMinorSet[axIdx]) ?  nMinorTicksMax[axIdx] : 0;
-            if(nMinorTicks > 0) {
-                let minorTickPos = Array();
-                if(logScale[axIdx] && tick == 1) {
-                    minorTickPos = logspace(1, (9/(nMinorTicks-1)), 10);
-                    minorTickPos.forEach((value, index) => {minorTickPos[index] = (minorTickPos[index])*dTick});
-                } else {
-                    minorTickPos = linspace(0, (2/nMinorTicks)*dTick, dTick);
-                };
-                
-                for(let idx = 1; idx < minorTickPos.length-1; ++idx) {
-                    const offset = (axIdx > 0) ? dTick-minorTickPos[idx] : minorTickPos[idx];
-                    addTickLines(defsg, offset, axIdx, minorTickLength, "2 4");
-                };
+            const isLogTick = logScale[axIdx] && tick == 1;
+            const nMinorTicks = (tickMinorSet[axIdx]) ?  nMinorTicksMax[axIdx]  / (2-isLogTick) : 1;
+            const minorTickPos = linspace(10/nMinorTicks, 10/nMinorTicks, 10);
+     
+            if(nMinorTicks>1) {              
+                if(logScale[axIdx] && tick == 1)                 
+                    minorTickPos.forEach((value, index) => {minorTickPos[index] = 10*log10(minorTickPos[index])});
+                for(let idx = 0; idx < minorTickPos.length-1; ++idx)
+                    addTickLines(defsg, minorTickPos[idx]/10 * dTick * (1-2*axIdx), axIdx, minorTickLength, "2 4", gridMinorSet[axIdx]);
             };
             
-            addTickLines(defsg, 0, axIdx, tickLength, "");
+            addTickLines(defsg, 0, axIdx, tickLength, "", grid);
     
-            for(let idx = -1; idx <= nTicks; ++idx) {
-                const tickPos =  tickOffset + dTick * idx; 
+            const pos = calcTickPos(ticks, lim[axIdx], lim[2+axIdx]);
+            for(let idx = 0; idx < ticks.length; ++idx) {
+                //const tickPos =  tickOffset + dTick * idx; 
+                const tickPos = (axIdx >0) ? 100-pos[idx] : pos[idx];
+                const c = (axIdx) ? [0,tickPos] : [tickPos, 0];
+                const tc = (axIdx) ? [size(svgAx)[2] - axesLblFontSize*0.5,tickPos+"%"] : [tickPos+"%", axesLblFontSize*0.9];
+                 c
                 let textEl = null; 
-             
-                if(idx >= 0) {
-                    if(axIdx > 0)                
-                        textEl = addSvgTxt(svgAx, tickLabel[nTicks-idx], size(svgAx)[2] - axesLblFontSize*0.5, tickPos+"%", axesLblFontSize, "end");
-                    else 
-                        textEl = addSvgTxt(svgAx, tickLabel[idx], tickPos+"%", axesLblFontSize*0.9, axesLblFontSize);
-    
+                if(pos[idx] >= 0 && (idx > 0 || tickOvr)) {
+                    textEl = addSvgTxt(svgAx, tickLabel[idx], tc[0], tc[1], axesLblFontSize, (axIdx) ? "end" : "middle");    
                     addSvgEl(null,textEl,{"dominant-baseline":"central", "class":"cg_" +elementId});
-                    }
-                let c = [tickPos, 0];
-                if(axIdx>0) c = [c[1],c[0]];
+                }
+                
                 addSvgEl(svgBg, "use", {"href":"#mg" + axIdx + "_"+elementId, "x":c[0], "y":c[1], 
                     "class":"cg_" +elementId});
             };
         };   
     };
 
-    function calcTick(range, nTicks, logScale)
-    {
+    // calculates the coordiantes of the ticks based on values 
+    function calcTickPos(values, startPos, range) {
+        const pos = Array(values.length);
+        for(let idx = 0; idx < values.length; ++idx)
+            pos [idx] = 100*(values[idx] - startPos) / range;
+
+        return pos;
+    };
+
+    // calculates the space between ticks
+    function calcTick(range, nTicks, logScale) {
         let tick = range/nTicks;		
         // round to next decade
         const exponent = floor(log10(tick));
@@ -895,16 +899,16 @@ function plotSvg(elementId, x, y, numLines,
         }*/
     };
 
-    function addTickLines(parent, offset, axIdx, tickLength, dash){
+    function addTickLines(parent, offset, axIdx, tickLength, dash, gridEnbl){
         let x = [offset, 0, 0, tickLength, offset, 100];
         if(axIdx>0) x = [x[1],x[0],x[3],x[2],x[5],x[4]];  // swap x,y 
-        if(grid) addSvgLn(parent, x[0], x[1], x[4], x[5], "rgb(223,223,223)", dash);
+        if(gridEnbl) addSvgLn(parent, x[0], x[1], x[4], x[5], "rgb(223,223,223)", dash);
         const startTick = addSvgLn(parent, 0,0, x[2], x[3]);
         const endTick = addSvgLn(parent, -x[2], -x[3], 0, 0);
         transform(startTick, [x[0],x[1]], [1, 1]);
         transform(endTick, [x[4],x[5]], [1, 1]);
-        addSvgEl(null, startTick, {"class":"marker_" + elementId});
-        addSvgEl(null, endTick, { "class":"marker_" + elementId});
+        addSvgEl(null, startTick, {"class":"marker_" + elementId}); // reuse "marker" class to gete automatic resizing
+        addSvgEl(null, endTick, { "class":"marker_" + elementId}); // reuse "marker" class to gete automatic resizing
             
     };
 
@@ -958,10 +962,6 @@ function plotSvg(elementId, x, y, numLines,
     
     function logspace(start, increment, stop) {
         return linspace(start, increment, stop).map(log10);
-    };
-    
-    function decades(start, increment, stop) {
-        return linspace(start, increment, stop).map((x) => 10 ** x);
     };
 
     function num2eng(val) {

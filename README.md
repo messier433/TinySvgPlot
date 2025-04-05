@@ -3,6 +3,7 @@ Supported plot features
 - multiple line plots with different markers and dash styles
 - scatter plot (no lines)
 - linear and log scale of axes
+- Auto or manual axes ticks
 - major and minor grid lines
 - title, subtitle and axes label
 - auto and custom set axes limits

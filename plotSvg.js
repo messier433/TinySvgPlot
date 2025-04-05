@@ -351,11 +351,11 @@ function plotSvg(elementId, x, y, numLines,
     //////////////////////////////
     // create drawing area and resize elements
     //////////////////////////////
-    const wSvgLeft = axLblBb[1].width + 0.5*axesLblFontSize + 1.5*axesLblFontSize*(xlabel.length>0) + fontSpacing;
-    const hSvgBtm = axLblBb[0].height + 0.5*axesLblFontSize + (1.5*axesLblFontSize+fontSpacing)*(ylabel.length>0) + fontSpacing;   
+    const wSvgLeft = axLblBb[1].width + 0.5*axesLblFontSize + 1.5*axesLblFontSize*(ylabel.length>0) + fontSpacing;
+    const hSvgBtm = axLblBb[0].height + fontSpacing + (1.5*axesLblFontSize+fontSpacing)*(xlabel.length>0);   
     const hSvgDraw = svgSz[3] - hSvgBtm - hSvgTop; 
     const legInside = (legFill=="white") ;
-    const wLegendMargin = legInside ? 2*legendYSpacing : 0;
+    const wLegendMargin = legInside ? 2*legendXSpacing : 0;
     const hLegendMargin = legInside ? 2*legendYSpacing : 0;
     const maxLegendHeight = hSvgDraw - hLegendMargin;
     wSvgLeg = (wSvgLeg > maxLegendWidth) ? maxLegendWidth : wSvgLeg;
@@ -809,16 +809,19 @@ function plotSvg(elementId, x, y, numLines,
             };
             
             addTickLines(defsg, 0, axIdx, tickLength, "", grid);
-    
-            const pos = calcTickPos(ticks, lim[axIdx], lim[2+axIdx]);
-            const defaultAngle = tickangle[axIdx] - 90*axIdx*(1-2*(tickangle[axIdx]<0));
-            const textAnchor = (defaultAngle < -11) ? "end" : (defaultAngle > 11) ? "start" : "middle";
+            let defaultAngle = tickangle[axIdx];
+            defaultAngle -= (axIdx) ? 90 : 0;
+            defaultAngle = defaultAngle % 180;
+
+            const pos = calcTickPos(ticks, lim[axIdx], lim[2+axIdx]);       
+            const textAnchor = (defaultAngle < -11) ? "end" :  ((defaultAngle > 11) ? "start" : "middle");
             //const textAnchor = (axIdx ^ swapAnchor) ? "end" : "middle";
             for(let idx = 0; idx < ticks.length; ++idx) {
                 //const tickPos =  tickOffset + dTick * idx; 
                 const tickPos = (axIdx >0) ? 100-pos[idx] : pos[idx];
                 const c = (axIdx) ? [0,tickPos] : [tickPos, 0];
-                const tc = (axIdx) ? ["100%",tickPos+"%"] : [tickPos+"%", axesLblFontSize*0.9];
+                const tc = (axIdx) ? ["100%",tickPos+"%"] : 
+                    [tickPos+"%", fontSpacing + axesLblFontSize*0.5*(textAnchor=="middle")];
                 let textEl = null; 
                 //size(svgAx)[2] - axesLblFontSize*0.5
                 if(pos[idx] >= 0 && (idx > 0 || tickOvr)) {

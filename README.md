@@ -34,6 +34,8 @@ Optional parameters:
  - yScale: String that defines the scaling of the y-axes. Valid options: "log", "lin" (default)
  - grid: Boolean to enable grid lines for x and y-axes. In case of log-scale this automatically enables also minor-grid lines
  - gridMinor: Scalar or 2 value Boolean array to enable minor grid lines for x- and/or y-axes
+ - xtick: Array with manual definition of xtick position
+ - ytick: Array with manual definition of ytick position
  - style: String or string-array the defines the type of each line.<br />
    Valid options:<br />
    "" solid line<br />

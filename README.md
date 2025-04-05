@@ -40,7 +40,7 @@ Optional parameters:
  - xticklbl: String array with manual definition of xTick label
  - yticklbl: String array with manual definition of yTick label
  - xtickangle: Numeric for rotating the xTick label in degrees
- - ytickangle: Numeric for rotating the xTick label in degrees
+ - ytickangle: Numeric for rotating the yTick label in degrees
  - style: String or string-array the defines the type of each line.<br />
    Valid options:<br />
    "" solid line<br />

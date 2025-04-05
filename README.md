@@ -25,6 +25,7 @@ Function call:
 plotSvg(ID, x, y, numLines, optParam);
 
 Optional parameters:
+ - color: String or string array that defines the color for all lines
  - title: String that defines the main title on top of plot area 
  - subtitle: String that defines the sub-title below the main title with smaller font,
  - xlabel: String that defines the label below the x-axes

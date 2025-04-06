@@ -1,4 +1,4 @@
-<a href="https://messier433.github.io/TinySvgPlot/example.html" target="_blank"><img src="https://github.com/user-attachments/assets/2289d5bd-e12b-4c18-b4ed-34df70f89fbb"/></a>
+<a href="https://messier433.github.io/TinySvgPlot/example.html" target="_blank"><img src="https://github.com/user-attachments/assets/7cddddf6-38e8-412b-81da-f45cc6694bf6"/></a>
 
 Supported plot features
 - multiple line plots with different markers and dash styles

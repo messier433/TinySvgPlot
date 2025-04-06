@@ -45,6 +45,11 @@
                     legendLocation: "northeastoutside",
                     //legendLocation: "northeast",
                     //linTip:false,
+                    buttons: [{text:"log(x)", init:"xScale==\"log\"", redraw:1,callback:(state)=>{return {"xScale":(state) ? "\"log\"" : "\"lin\""}}},
+                              {text:"log(y)", init:"yScale==\"log\"", redraw:1,callback:(state)=>{return {"yScale":(state) ? "\"log\"" : "\"lin\""}}},
+                              {text:"snap", init:"!linTip", redraw:0,callback:(state)=>{return {"linTip":(state) ? "0" : "1"}}},
+                              {text:"marker", init:"0", redraw:1,callback:(state)=>{return {"marker":(state) ? "\".\"" : "\"\""}}}
+                    ]
                     };
 
 

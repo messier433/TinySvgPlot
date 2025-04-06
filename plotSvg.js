@@ -373,6 +373,7 @@ function plotSvg(elementId, x, y, numLines,
         };
         plRec = addSvgRec(svgDraw, 0, 0, "100%", "100%", "none", "black");
         addSvgEl(null, plRec, {"id":"plr_"+elementId,"pointer-events": "visible"});
+        plRec.onclick = (event) => plotClicked(event);
     };
     //////////////////////////////
     // create drawing area and resize elements
@@ -430,7 +431,6 @@ function plotSvg(elementId, x, y, numLines,
     addToggleButton("log(x)", logScale[0], (state) => {xScale = (state) ? "log" : "lin"; draw();resizeSvg();});
 
     // add event callbacks
-    plRec.onclick = (event) => plotClicked(event);
     svg.oncontextmenu = (event) => {event.preventDefault()}; // prevent context menu during zoom
     svgDraw.onmousedown = (event) => plotMouseDown(event);
     svgDraw.ondblclick = () => setAxesLim(pltLim);
@@ -609,8 +609,8 @@ function plotSvg(elementId, x, y, numLines,
 
     // converts plot coordiantes back to data source
     function convertCoord(point, pltLim, logScale) {
-        x = point[0] / 100 * pltLim[2] + pltLim[0];
-        y = (1-point[1] / 100) * pltLim[3] + pltLim[1];
+        let x = point[0] / 100 * pltLim[2] + pltLim[0];
+        let y = (1-point[1] / 100) * pltLim[3] + pltLim[1];
     
         x = (logScale[0]) ? (10**x) : x;
         y = (logScale[1]) ? (10**y) : y;
@@ -693,8 +693,8 @@ function plotSvg(elementId, x, y, numLines,
         result = getNearestLine(elementId, plotX, plotY, detX, detY, linTip);
         const closestEl = result.ele;
         if(closestEl == null)
-            return;
-    
+            return;    
+       
         const intX = result.x;
         const intY = result.y;
         //const topX = (intX-vBx)/scaleX + drawX;
@@ -797,7 +797,7 @@ function plotSvg(elementId, x, y, numLines,
         svgDraw.viewBox.baseVal.y = shiftY;
     
         // shift plot-area rectangle to new viewbox
-        addSvgEl(null, plr, {"x":shiftX, "y":shiftY});        
+        addSvgEl(null, plRec, {"x":shiftX, "y":shiftY});        
 
         createGrid(lim);
         updateMarkerPos();

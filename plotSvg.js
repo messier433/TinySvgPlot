@@ -441,7 +441,7 @@ function plotSvg(elementId, x, y, numLines,
     let btnXOffset = 0;
     for(let idx = 0; idx<length(buttons); ++idx) {
         const button = buttons[idx];
-        addToggleButton(button.text, eval(button.init), button.callback, button.redraw);
+        addToggleButton(button.text, eval(button.init), button.callback, button.redraw, button.hover);
     };
 
     // add event callbacks
@@ -477,19 +477,20 @@ function plotSvg(elementId, x, y, numLines,
         return lim;
     };
 
-    function addToggleButton(text, initState, callback=null, redraw = 1) {
-        const logBtn = addSvgEl(btnGrp, "g", {"pointer-events": "visible"});
-
-        const rec = addSvgRec(logBtn, 0, -14, 0, 18, "none");  // invisible rectangle for click event
+    function addToggleButton(text, initState, callback=null, redraw = 1, hoverStr="") {
+        const tglBtn = addSvgEl(btnGrp, "g", {"pointer-events": "visible"});
+        const hover = addSvgEl(tglBtn, "title");
+        hover.append(doc.createTextNode(hoverStr));   
+        const rec = addSvgRec(tglBtn, 0, -14, 0, 18, "none");  // invisible rectangle for click event
         //addSvgRec(logBtn, 0, -14, 36, 18, "none", "#73AFD7", 2.5, 3);  // invisible rectangle for click event
-        const lbl = addSvgTxt(logBtn, text, 3,-1,12, "start", defaultFont, "grey");
+        const lbl = addSvgTxt(tglBtn, text, 3,-1,12, "start", defaultFont, "grey");
         const bbw = lbl.getBBox().width + 6;
         let isClicked = initState;
         
         addSvgEl(null, rec, {"width": bbw, "rx":3});
         changeStatus(isClicked);
-        transform(logBtn, [btnXOffset, -8]);
-        logBtn.onclick = () => {
+        transform(tglBtn, [btnXOffset, -8]);
+        tglBtn.onclick = () => {
             isClicked = !isClicked;
             changeStatus(isClicked);
             if(callback != null) {
@@ -508,7 +509,7 @@ function plotSvg(elementId, x, y, numLines,
             setAttr(lbl, "fill", (clicked)? "#black" : "grey");
         }
         btnXOffset += bbw + 5;
-        return logBtn;
+        return tglBtn;
     }
 
     function addMarker(id, elements, addSolid=0) {

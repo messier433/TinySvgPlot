@@ -201,7 +201,8 @@ function plotSvg(elementId, x, y, numLines,
     draw();
 
     function draw() {
-        svgDraw.innerHTML = "";
+        svgDraw.innerHTML = ""; // clear
+        setAttr(svgDraw, "viewBox", "0 0 100 100"); // reset viewbox
 
         // define markers
         defsDraw = addSvgEl(svgDraw, "defs");

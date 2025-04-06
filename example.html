@@ -5,7 +5,7 @@
 </head>
 <body style="margin: 0px;padding:0px">
   
-    <div id="drawing" style="width:100%;height:calc(100vh - 4px)"></div>
+  <div id="drawing" style="width:100%;height:calc(100vh - 4px)"></div>
 
   <script src="https://messier433.github.io/TinySvgPlot/plotSvgMin.js"></script>
   <script>
@@ -45,10 +45,30 @@
                     legendLocation: "northeastoutside",
                     //legendLocation: "northeast",
                     //linTip:false,
-                    buttons: [{text:"log(x)", init:"xScale==\"log\"", redraw:1,callback:(state)=>{return {"xScale":(state) ? "\"log\"" : "\"lin\""}}},
-                              {text:"log(y)", init:"yScale==\"log\"", redraw:1,callback:(state)=>{return {"yScale":(state) ? "\"log\"" : "\"lin\""}}},
-                              {text:"snap", init:"!linTip", redraw:0,callback:(state)=>{return {"linTip":(state) ? "0" : "1"}}},
-                              {text:"marker", init:"0", redraw:1,callback:(state)=>{return {"marker":(state) ? "\".\"" : "\"\""}}}
+                    buttons: [{text:"log(x)", 
+                               init:"xScale==\"log\"",
+                               redraw:1,
+                               callback:(state)=>{return {"xScale":(state) ? "\"log\"" : "\"lin\""}},
+                               hover:"logarithmic x-axes"
+                              },
+                              {text:"log(y)", 
+                               init:"yScale==\"log\"", 
+                               redraw:1,
+                               callback:(state)=>{return {"yScale":(state) ? "\"log\"" : "\"lin\""}},
+                               hover:"logarithmic y-axes"
+                              },
+                              {text:"snap", 
+                               init:"!linTip", 
+                               redraw:0,
+                               callback:(state)=>{return {"linTip":(state) ? "0" : "1"}},
+                               hover:"Snap with data-tips to points only"
+                              },
+                              {text:"points", 
+                              init:"0", 
+                              redraw:1,
+                              callback:(state)=>{return {"marker":(state) ? "\".\"" : "\"\""}},
+                              hover:"Show data points"
+                              }
                     ]
                     };
 

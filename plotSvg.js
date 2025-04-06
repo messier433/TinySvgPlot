@@ -425,11 +425,11 @@ function plotSvg(elementId, x, y, numLines,
     addSvgPolyLn(downloadBtn, "0,17 0,20 16,20 16,17");
     addSvgRec(downloadBtn, 0, 0, 21, 21); // invisible rectangle for click event
     downloadBtn.onclick = () => {downloadSvg()};
-    let btnXOffset = 20;
+    let btnXOffset = 0;
     // draw logx and logy button
-    addToggleButton("log(y)", logScale[1], (state) => {yScale = (state) ? "log" : "lin"; draw(); resizeSvg();});
     addToggleButton("log(x)", logScale[0], (state) => {xScale = (state) ? "log" : "lin"; draw();resizeSvg();});
-
+    addToggleButton("log(y)", logScale[1], (state) => {yScale = (state) ? "log" : "lin"; draw(); resizeSvg();});
+   
     // add event callbacks
     svg.oncontextmenu = (event) => {event.preventDefault()}; // prevent context menu during zoom
     svgDraw.onmousedown = (event) => plotMouseDown(event);
@@ -464,17 +464,17 @@ function plotSvg(elementId, x, y, numLines,
     };
 
     function addToggleButton(text, initState, callback=null) {
-        const logBtn = addSvgEl(btnGrp, "g", {"pointer-events": "visible"});
+        const logBtn = addSvgEl(svgTop, "g", {"pointer-events": "visible"});
 
         const rec = addSvgRec(logBtn, 0, -14, 0, 18, "none");  // invisible rectangle for click event
         //addSvgRec(logBtn, 0, -14, 36, 18, "none", "#73AFD7", 2.5, 3);  // invisible rectangle for click event
         const lbl = addSvgTxt(logBtn, text, 3,-1,12, "start", defaultFont, "grey");
         const bbw = lbl.getBBox().width + 6;
         let isClicked = initState;
-        btnXOffset += bbw + 5;
+        
         addSvgEl(null, rec, {"width": bbw, "rx":3});
         changeStatus(isClicked);
-        transform(logBtn, [-btnXOffset, -8]);
+        transform(logBtn, [btnXOffset, pltAr[1]-8]);
         logBtn.onclick = () => {
             isClicked = !isClicked;
             changeStatus(isClicked);
@@ -486,6 +486,7 @@ function plotSvg(elementId, x, y, numLines,
                 "stroke-width":(clicked) ? 2.5 : 1.5});
             setAttr(lbl, "fill", (clicked)? "#black" : "grey");
         }
+        btnXOffset += bbw + 5;
         return logBtn;
     }
 

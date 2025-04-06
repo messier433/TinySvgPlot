@@ -414,7 +414,7 @@ function plotSvg(elementId, x, y, numLines,
     ////////////////////////////
     // toolbar
     ////////////////////////////
-    const btnGrp = addSvgEl(svgTop, "g", {"id":"b_"+elementId});
+    const btnGrp = addSvgEl(svgTop, "g", {"id":"b_"+elementId, "cursor": "pointer",});
     transform(btnGrp, [pltAr[2], pltAr[1]]);
     // draw download button
     const downloadBtn = addSvgEl(btnGrp, "g", {

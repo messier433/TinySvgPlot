@@ -415,11 +415,11 @@ function plotSvg(elementId, x, y, numLines,
     // toolbar
     ////////////////////////////
     const btnGrp = addSvgEl(svgTop, "g", {"id":"b_"+elementId});
-
+    transform(btnGrp, [pltAr[2], pltAr[1]]);
     // draw download button
     const downloadBtn = addSvgEl(btnGrp, "g", {
         "stroke-width":2,"stroke-linecap":"round", "stroke-linejoin":"round","class":"b", "pointer-events": "visible"});
-    transform(downloadBtn, [(pltAr[2] - 18), (pltAr[1] - 24)]);
+    transform(downloadBtn, [-18, -24]);
     addSvgPolyLn(downloadBtn, "8,0 8,16 2,9 8,16 14,9");
     addSvgPolyLn(downloadBtn, "0,17 0,20 16,20 16,17");
     addSvgRec(downloadBtn, 0, 0, 21, 21); // invisible rectangle for click event
@@ -474,7 +474,7 @@ function plotSvg(elementId, x, y, numLines,
         btnXOffset += bbw + 5;
         addSvgEl(null, rec, {"width": bbw, "rx":3});
         changeStatus(isClicked);
-        transform(logBtn, [(pltAr[2] - btnXOffset), (pltAr[1] - 8)]);
+        transform(logBtn, [-btnXOffset, -8]);
         logBtn.onclick = () => {
             isClicked = !isClicked;
             changeStatus(isClicked);
@@ -573,7 +573,7 @@ function plotSvg(elementId, x, y, numLines,
             setAttr(svgTop, "width", newChildWidth);    
             setAttr(svgBottom, "width", newChildWidth); 
             if(svgLeg!=null) svgLeg.x.baseVal.value += newChildWidth - childSz[2];  
-            downloadBtn.transform.baseVal[0].matrix.e += newChildWidth - childSz[2];   
+            btnGrp.transform.baseVal[0].matrix.e += newChildWidth - childSz[2];   
         }
         if(childSz[3] != newChildHeight) {
             setAttr(svgDraw, "height",  newChildHeight);

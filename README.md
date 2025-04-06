@@ -22,8 +22,7 @@ Supported interactions:
   Double-click of legend item: if selected item is visible, hide all other items. If invisible, make all items visible<br />
   Mouse wheel: Scroll legend in case items do not fit in vertical legend area<br />
 - download generated SVG
-- Toogle buttons for log/lin scale of axes
-- Toggle button to set data-tip mode (linear interpolation or snap to points)
+- Custom toogle buttons to change optParams dynamically
 
 Function call:
 plotSvg(ID, x, y, numLines, optParam);

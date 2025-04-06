@@ -438,7 +438,8 @@ function plotSvg(elementId, x, y, numLines,
     // draw logx and logy button
     addToggleButton("log(x)", logScale[0], (state) => {xScale = (state) ? "log" : "lin"; draw();resizeSvg();});
     addToggleButton("log(y)", logScale[1], (state) => {yScale = (state) ? "log" : "lin"; draw(); resizeSvg();});
-   
+    addToggleButton("snap", !linTip, (state) => {linTip = !state});
+
     // add event callbacks
     svg.oncontextmenu = (event) => {event.preventDefault()}; // prevent context menu during zoom
     svgDraw.onmousedown = (event) => plotMouseDown(event);

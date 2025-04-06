@@ -385,9 +385,9 @@ function plotSvg(elementId, x, y, numLines,
     const wLegendMargin = legInside ? 2*legendXSpacing : 0;
     const hLegendMargin = legInside ? 2*legendYSpacing : 0;
     const maxLegendHeight = hSvgDraw - hLegendMargin;
+    const hLegendItems = hSvgLeg;
     wSvgLeg = (wSvgLeg > maxLegendWidth) ? maxLegendWidth : wSvgLeg;
     hSvgLeg = (hSvgLeg > maxLegendHeight) ? maxLegendHeight : hSvgLeg;
-    const hLegendItems = hSvgLeg;
     const wSvgDraw = svgSz[2] - wSvgLeg*(1-legInside) - wSvgLeft - 2*legendXSpacing;
     const pltAr = [wSvgLeft, hSvgTop, wSvgDraw, hSvgDraw];
     const gBottomShift = -svgSz[3] + pltAr[1] + pltAr[3];

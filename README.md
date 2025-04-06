@@ -54,10 +54,10 @@ Optional parameters:
    Valid option: <br />
    "" No markers<br />
    "o" Circle<br />
-   "+" Cross<br />
+   "+" Plus<br />
    "*" Star<br />
    "." Dot<br />
-   "x" X<br />
+   "x" Cross<br />
    "_" Horizontal line<br />
    "|" Vertical Line<br />
    "sq" Square<br />

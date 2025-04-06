@@ -23,6 +23,7 @@ Supported interactions:
   Mouse wheel: Scroll legend in case items do not fit in vertical legend area<br />
 - download generated SVG
 - Toogle buttons for log/lin scale of axes
+- Toggle button to set data-tip mode (linear interpolation or snap to points)
 
 Function call:
 plotSvg(ID, x, y, numLines, optParam);

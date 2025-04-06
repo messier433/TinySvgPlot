@@ -43,10 +43,12 @@ function plotSvg(elementId, x, y, numLines,
 {color = "", title = "", subtitle = "", xlabel = "", ylabel="", xlim=[], ylim=[], 
     style="-", marker="", legend = [], xScale = "lin", yScale = "lin", grid = true, 
     gridMinor = [], xtick = [], ytick = [], xticklbl=[], yticklbl=[], 
-    xtickangle = 0, ytickangle = 0,legendLocation = 'northeastoutside', linTip = true 
+    xtickangle = 0, ytickangle = 0,legendLocation = 'northeastoutside', linTip = true,
+    buttons = []
 }={}
 )
 {    
+    
     const el = getEl(elementId);
     const mainDiv = doc.createElement("div");
     addSvgEl(el,mainDiv)
@@ -435,11 +437,12 @@ function plotSvg(elementId, x, y, numLines,
     addSvgPolyLn(downloadBtn, "0,17 0,20 16,20 16,17");
     addSvgRec(downloadBtn, 0, 0, 21, 21); // invisible rectangle for click event
     downloadBtn.onclick = () => {downloadSvg()};
+    // add custom buttons
     let btnXOffset = 0;
-    // draw logx and logy button
-    addToggleButton("log(x)", logScale[0], (state) => {xScale = (state) ? "log" : "lin"; draw();resizeSvg();});
-    addToggleButton("log(y)", logScale[1], (state) => {yScale = (state) ? "log" : "lin"; draw(); resizeSvg();});
-    addToggleButton("snap", !linTip, (state) => {linTip = !state});
+    for(let idx = 0; idx<length(buttons); ++idx) {
+        const button = buttons[idx];
+        addToggleButton(button.text, eval(button.init), button.callback, button.redraw);
+    };
 
     // add event callbacks
     svg.oncontextmenu = (event) => {event.preventDefault()}; // prevent context menu during zoom
@@ -474,7 +477,7 @@ function plotSvg(elementId, x, y, numLines,
         return lim;
     };
 
-    function addToggleButton(text, initState, callback=null) {
+    function addToggleButton(text, initState, callback=null, redraw = 1) {
         const logBtn = addSvgEl(btnGrp, "g", {"pointer-events": "visible"});
 
         const rec = addSvgRec(logBtn, 0, -14, 0, 18, "none");  // invisible rectangle for click event
@@ -489,7 +492,14 @@ function plotSvg(elementId, x, y, numLines,
         logBtn.onclick = () => {
             isClicked = !isClicked;
             changeStatus(isClicked);
-            if(callback != null) callback(isClicked);
+            if(callback != null) {
+                attrs = callback(isClicked);
+                for (let val in attrs) 
+                    eval(val+"=" + attrs[val]);
+            };
+            if(redraw) {
+                draw();resizeSvg();
+            };
         };
 
         function changeStatus(clicked) {
@@ -631,7 +641,7 @@ function plotSvg(elementId, x, y, numLines,
     }
 
     // find a nearest line within 'proximity'
-    function getNearestLine(elementId, Cx, Cy, dx, dy, linTip) {
+    function getNearestLine(elementId, Cx, Cy, dx, dy) {
         let closestEl = null;
         let closestDist = Inf;
         let closestXproj = 0;
@@ -706,7 +716,7 @@ function plotSvg(elementId, x, y, numLines,
         const dSnap = 6;
         const detX = dSnap * scaleX;
         const detY = dSnap * scaleY;
-        result = getNearestLine(elementId, plotX, plotY, detX, detY, linTip);
+        result = getNearestLine(elementId, plotX, plotY, detX, detY);
         const closestEl = result.ele;
         if(closestEl == null)
             return;    

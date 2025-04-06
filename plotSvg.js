@@ -349,10 +349,8 @@ function plotSvg(elementId, x, y, numLines,
                     strokeWidth = 0;
             };
 
-            const poly = addSvgPolyLn(gp, "", colorSel, dashStr, strokeWidth);
-            addSvgEl(null, poly, {"id": "pl_" +elementId+"_"+lnIdx,
-                "marker-start":markerStyle, "marker-mid":markerStyle, "marker-end":markerStyle, 
-                "stroke-width":strokeWidth});
+            const polyGrp = addSvgEl(gp, "g", {"id": "pl_" +elementId+"_"+lnIdx});
+            let poly = null;
             //poly.setAttribute("shape-rendering","optimizeSpeed ");
             if(svgLeg!=null) {
                 const markerStyle = "url(#ml" + (isArray(marker) ? marker[lnIdx] : marker) +"_"+elementId+ ")";  
@@ -363,13 +361,23 @@ function plotSvg(elementId, x, y, numLines,
             for(let ptIdx = 0; ptIdx < numPtPerLine; ++ptIdx) {
                 const ptx = varX ? xInt[lnIdx*numPtPerLine  + ptIdx] : xInt[ptIdx];
                 const pty = yInt[lnIdx*numPtPerLine  + ptIdx];
+
+                if (!isFinite(ptx) || !isFinite(pty)) {
+                    poly = null; // interrupt line
+                    continue;
+                }
+
+                if(poly == null) {
+                    poly = addSvgPolyLn(polyGrp, "", colorSel, dashStr, strokeWidth);
+                    addSvgEl(null, poly, {"marker-start":markerStyle, "marker-mid":markerStyle, "marker-end":markerStyle, 
+                        "stroke-width":strokeWidth});
+                }
                 
-                if (isFinite(ptx) && isFinite(pty)) {
-                    const point = svgDraw.createSVGPoint();
-                    point.x = 100*(ptx-pltLim[0])/ pltLim[2];
-                    point.y = 100-100*(pty-pltLim[1]) / pltLim[3];
-                    poly.points.appendItem(point);
-                };
+                const point = svgDraw.createSVGPoint();
+                point.x = 100*(ptx-pltLim[0])/ pltLim[2];
+                point.y = 100-100*(pty-pltLim[1]) / pltLim[3];
+                poly.points.appendItem(point);
+                
             };                
         };
         plRec = addSvgRec(svgDraw, 0, 0, "100%", "100%", "none", "black");
@@ -632,51 +640,55 @@ function plotSvg(elementId, x, y, numLines,
 
         for(let idx = 0; idx < nLines; ++idx) {
             const line = polylines.children[idx];
-            const pts = line.points;
-            const nPts = length(pts);
-            if( line.style.display == "none") // dont consider hidden lines
-                continue;
-            for(let idxPt = 1; idxPt < nPts;++idxPt) {
-                const ptA = pts[idxPt-1];
-                const ptB = pts[idxPt];
-
-                // check if point is in rectangle
-                if(((Cx < (ptA.x-dx)) && (Cx < (ptB.x-dx))) || ((Cx > (ptA.x+dx)) && (Cx > (ptB.x+dx))) || 
-                    ((Cy < (ptA.y-dy)) && (Cy < (ptB.y-dy))) || ((Cy > (ptA.y+dy)) && (Cy > (ptB.y+dy))))
+            const nSeg = length(line.children);
+            for(let segidx = 0; segidx < nSeg; ++segidx) {
+                const seg = line.children[segidx];
+                const pts = seg.points;
+                const nPts = length(pts);
+                if( line.style.display == "none") // dont consider hidden lines
                     continue;
-                    
-                // project point onto line
-                const ptBAx = (ptB.x- ptA.x);
-                const ptBAy = (ptB.y- ptA.y);            
-                const ptCAx = Cx - ptA.x;
-                const ptCAy = Cy - ptA.y;
-                const coeff = (ptBAx*ptCAx + ptBAy*ptCAy) / (ptBAx*ptBAx+ptBAy*ptBAy);
-                const xproj = ptA.x + ptBAx * coeff;
-                const yproj = ptA.y + ptBAy * coeff;
-                const dist = (xproj-Cx)*(xproj-Cx)/dx/dx + (yproj-Cy)*(yproj-Cy)/dy/dy;
+                for(let idxPt = 1; idxPt < nPts;++idxPt) {
+                    const ptA = pts[idxPt-1];
+                    const ptB = pts[idxPt];
 
-                if(dist >= 1 || dist > closestDist) 
-                    continue;
+                    // check if point is in rectangle
+                    if(((Cx < (ptA.x-dx)) && (Cx < (ptB.x-dx))) || ((Cx > (ptA.x+dx)) && (Cx > (ptB.x+dx))) || 
+                        ((Cy < (ptA.y-dy)) && (Cy < (ptB.y-dy))) || ((Cy > (ptA.y+dy)) && (Cy > (ptB.y+dy))))
+                        continue;
+                        
+                    // project point onto line
+                    const ptBAx = (ptB.x- ptA.x);
+                    const ptBAy = (ptB.y- ptA.y);            
+                    const ptCAx = Cx - ptA.x;
+                    const ptCAy = Cy - ptA.y;
+                    const coeff = (ptBAx*ptCAx + ptBAy*ptCAy) / (ptBAx*ptBAx+ptBAy*ptBAy);
+                    const xproj = ptA.x + ptBAx * coeff;
+                    const yproj = ptA.y + ptBAy * coeff;
+                    const dist = (xproj-Cx)*(xproj-Cx)/dx/dx + (yproj-Cy)*(yproj-Cy)/dy/dy;
 
-                closestDist = dist;
-                closestEl = line;
-                const dCAx = (Cx > ptA.x) ? Cx - ptA.x : ptA.x - Cx;
-                const dCAy = (Cy > ptA.y) ? Cy - ptA.y : ptA.y - Cy;
-                const dCBx = (Cx > ptB.x) ? Cx - ptB.x : ptB.x - Cx;
-                const dCBy = (Cy > ptB.y) ? Cy - ptB.y : ptB.y - Cy;
-                // snap to point
-                if((dCAx < dCBx) && (dCAx < dx) && (dCAy < dy) ) {
-                    closestXproj = ptA.x;
-                    closestYproj = ptA.y;
-                } else if((dCBx < dx) && (dCBy < dy) ) {
-                    closestXproj = ptB.x;
-                    closestYproj = ptB.y;
-                } else if(linTip && getAttr(line, "stroke-width")!= 0) {
-                    closestXproj = xproj;
-                    closestYproj = yproj;
-                } else {
-                    closestEl = null;
-                };          
+                    if(dist >= 1 || dist > closestDist) 
+                        continue;
+
+                    closestDist = dist;
+                    closestEl = line;
+                    const dCAx = (Cx > ptA.x) ? Cx - ptA.x : ptA.x - Cx;
+                    const dCAy = (Cy > ptA.y) ? Cy - ptA.y : ptA.y - Cy;
+                    const dCBx = (Cx > ptB.x) ? Cx - ptB.x : ptB.x - Cx;
+                    const dCBy = (Cy > ptB.y) ? Cy - ptB.y : ptB.y - Cy;
+                    // snap to point
+                    if((dCAx < dCBx) && (dCAx < dx) && (dCAy < dy) ) {
+                        closestXproj = ptA.x;
+                        closestYproj = ptA.y;
+                    } else if((dCBx < dx) && (dCBy < dy) ) {
+                        closestXproj = ptB.x;
+                        closestYproj = ptB.y;
+                    } else if(linTip && getAttr(line, "stroke-width")!= 0) {
+                        closestXproj = xproj;
+                        closestYproj = yproj;
+                    } else {
+                        closestEl = null;
+                    };          
+                };
             };
         };
         return {"ele": closestEl, "x":closestXproj, "y":closestYproj};
@@ -706,7 +718,7 @@ function plotSvg(elementId, x, y, numLines,
         const lnId = closestEl.id;
         const lnIdx = lnId.slice(length(prefix), length(lnId)); // substring includes "_"
         const legendItem = getEl("lti_"+elementId+lnIdx);
-        const plotLine = getEl("pl_"+elementId+lnIdx);
+        const plotLine = closestEl.childNodes[0];//getEl("pl_"+elementId+lnIdx);
         const lineColor = getAttr(plotLine, "stroke");
         const sourceCoord = convertCoord([intX, intY], pltLim, logScale);
         let gl = getEl("gpl_" +elementId+lnIdx);
@@ -848,12 +860,12 @@ function plotSvg(elementId, x, y, numLines,
             const tick = calcTick(lim[2+axIdx], nTicksMax[axIdx], logScale[axIdx]);
             const max = lim[axIdx]+lim[2+axIdx];
             // next major ticks
-            const minTick = (ceil(lim[axIdx]/tick)-1) * tick; // -1 to draw extend the minor grid
-            const maxTick = (floor(max/tick)) * tick;
+            const minTick = (ceil(lim[axIdx]/tick)-1); // -1 to draw extend the minor grid
+            const maxTick = (floor(max/tick));
     
             // actual number of ticks       
             const isManTick = (length(tickOvr[axIdx]) > 0);     
-            const ticks = isManTick ? tickOvr[axIdx] : linspace(minTick,tick,maxTick);
+            const ticks = isManTick ? tickOvr[axIdx] : linspace(minTick,1,maxTick).map((x) => x*tick);
             const tickLabel = (length(ticklbl[axIdx]) > 0) ? ticklbl[axIdx] : (logScale[axIdx] ? num2eng(ticks.map((x) => 10 ** x)) : num2eng(ticks));
             // draw ticks, labels and grid lines
             const dTick = 100 * tick/lim[2+axIdx]; 
@@ -879,7 +891,8 @@ function plotSvg(elementId, x, y, numLines,
 
             const pos = calcTickPos(ticks, lim[axIdx], lim[2+axIdx]);       
             const textAnchor = (defaultAngle < -11) ? "end" :  ((defaultAngle > 11) ? "start" : "middle");
-            //const textAnchor = (axIdx ^ swapAnchor) ? "end" : "middle";
+            
+            
             for(let idx = 0; idx < length(ticks); ++idx) {
                 //const tickPos =  tickOffset + dTick * idx; 
                 const tickPos = (axIdx >0) ? 100-pos[idx] : pos[idx];

@@ -348,8 +348,9 @@ function plotSvg(elementId, x, y, numLines,
                 case "*":
                     strokeWidth = 0;
             };
-
+            const hideLn = svgLeg != null && getEl("lgi_"+elementId+"_"+lnIdx).style.opacity == 0.3;         
             const polyGrp = addSvgEl(gp, "g", {"id": "pl_" +elementId+"_"+lnIdx});
+            polyGrp.style.display = (hideLn) ? "none" : "block";
             let poly = null;
             //poly.setAttribute("shape-rendering","optimizeSpeed ");
             if(svgLeg!=null) {
@@ -543,7 +544,7 @@ function plotSvg(elementId, x, y, numLines,
         const datatips = getEl("gpl_" +elementId+"_"+lnIdx); // datatip group
 
         const str =(visible) ? "block" : "none";        
-        getEl("pl_"+elementId+"_"+lnIdx).style.display = str;
+        getEl("pl_"+elementId+"_"+lnIdx).style.display = str;              
         getEl("lgi_"+elementId+"_"+lnIdx).style.opacity = 0.3+0.7*visible;
         if(datatips!=null) datatips.style.display = str;
     }

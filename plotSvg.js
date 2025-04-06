@@ -416,11 +416,11 @@ function plotSvg(elementId, x, y, numLines,
     // toolbar
     ////////////////////////////
     const btnGrp = addSvgEl(svgTop, "g", {"id":"b_"+elementId, "cursor": "pointer",});
-    transform(btnGrp, [pltAr[2], pltAr[1]]);
+    transform(btnGrp, [0, pltAr[1]]);
     // draw download button
     const downloadBtn = addSvgEl(btnGrp, "g", {
         "stroke-width":2,"stroke-linecap":"round", "stroke-linejoin":"round","class":"b", "pointer-events": "visible"});
-    transform(downloadBtn, [-18, -24]);
+    transform(downloadBtn, [pltAr[2]-18, -24]);
     addSvgPolyLn(downloadBtn, "8,0 8,16 2,9 8,16 14,9");
     addSvgPolyLn(downloadBtn, "0,17 0,20 16,20 16,17");
     addSvgRec(downloadBtn, 0, 0, 21, 21); // invisible rectangle for click event
@@ -464,7 +464,7 @@ function plotSvg(elementId, x, y, numLines,
     };
 
     function addToggleButton(text, initState, callback=null) {
-        const logBtn = addSvgEl(svgTop, "g", {"pointer-events": "visible"});
+        const logBtn = addSvgEl(btnGrp, "g", {"pointer-events": "visible"});
 
         const rec = addSvgRec(logBtn, 0, -14, 0, 18, "none");  // invisible rectangle for click event
         //addSvgRec(logBtn, 0, -14, 36, 18, "none", "#73AFD7", 2.5, 3);  // invisible rectangle for click event
@@ -474,7 +474,7 @@ function plotSvg(elementId, x, y, numLines,
         
         addSvgEl(null, rec, {"width": bbw, "rx":3});
         changeStatus(isClicked);
-        transform(logBtn, [btnXOffset, pltAr[1]-8]);
+        transform(logBtn, [btnXOffset, -8]);
         logBtn.onclick = () => {
             isClicked = !isClicked;
             changeStatus(isClicked);
@@ -574,7 +574,7 @@ function plotSvg(elementId, x, y, numLines,
             setAttr(svgTop, "width", newChildWidth);    
             setAttr(svgBottom, "width", newChildWidth); 
             if(svgLeg!=null) svgLeg.x.baseVal.value += newChildWidth - childSz[2];  
-            btnGrp.transform.baseVal[0].matrix.e += newChildWidth - childSz[2];   
+            downloadBtn.transform.baseVal[0].matrix.e += newChildWidth - childSz[2];   
         }
         if(childSz[3] != newChildHeight) {
             setAttr(svgDraw, "height",  newChildHeight);

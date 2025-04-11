@@ -35,7 +35,8 @@ const round = Math.round;
 const floor = Math.floor;
 const log10 = Math.log10;
 const ceil = Math.ceil;
-const isArray = Array.isArray;
+const array = Array;
+const isArray = array.isArray;
 const Inf = Infinity;
 const doc =document;
 
@@ -48,7 +49,58 @@ function plotSvg(elementId, x, y, numLines,
 }={}
 )
 {    
+    // few helper functions...
+    const addSvgEl = (parent, ele, attrs) => {
+        //create the element with a specified string:
+        const element = (typeof ele == "string") ? doc.createElementNS(ns, ele) : ele;
+        //create a for...in loop set attributes:
+        for (let val in attrs) {
+            setAttr(element, val, attrs[val]);        
+        };
+        if(parent != null)
+            parent.appendChild(element);
+        //return the element with the set attributes:
+        return element;
+    };
+    const addSvgRec = (parent, x, y, width, height, fill="none", stroke="none", stroke_width=2, rx=0) =>
+        addSvgEl(parent, "rect", {"x":x, "y":y,"width":width, "height":height, "rx":rx,
+                "stroke":stroke, "stroke-width": stroke_width, "fill": fill, "vector-effect":"non-scaling-stroke"
+        });  
+
+    const addSvgTxt = (parent, text, x, y, fontsize, textanchor = "middle", fontfamily=defaultFont, fill="black") => {
+        const textEl = addSvgEl(parent, "text", {"x":x, "y":y,
+                "fill":fill, "font-size":fontsize, "text-anchor":textanchor, "font-family":fontfamily,
+                "stroke-width": 1
+                });
+        textEl.append(doc.createTextNode(text));              
+        return textEl;
+    }
+    const addSvgLn = (parent, x1, y1, x2,y2, stroke="black", strokedasharray="", stroke_width=1) =>
+        addSvgEl(parent, "line", {"x1":x1, "y1":y1,"x2":x2, "y2":y2,
+                "stroke":stroke, "stroke-width": stroke_width, "stroke-dasharray": strokedasharray, "vector-effect":"non-scaling-stroke"
+        });  
+
+    const addSvgPolyLn = (parent, points="", stroke="black", strokedasharray="", stroke_width=2) => 
+        addSvgEl(parent, "polyline", {"points":points, "fill": "none",
+                "stroke":stroke, "stroke-width": stroke_width, "stroke-dasharray": strokedasharray, "vector-effect":"non-scaling-stroke"
+        });  
+    const getEl = id => doc.getElementById(id);
+    const setAttr = (obj, field, val) => obj.setAttribute(field, val);
+    const getAttr = (obj, field) => obj.getAttribute(field);
+    const length = element => element.length;
+    const size = element => [element.x.baseVal.value, element.y.baseVal.value, 
+                             element.width.baseVal.value, element.height.baseVal.value];
+    const view = element => [element.viewBox.baseVal.x, element.viewBox.baseVal.y, 
+            element.viewBox.baseVal.width, element.viewBox.baseVal.height];
+    const transform = (element, translate, scale) => {
+        let str = (translate!=null) ? "translate("+translate[0]+" "+translate[1]+")" : "";
+        str += (scale!=null) ? "scale("+scale[0]+" "+scale[1]+")" : "";
+        element.setAttribute("transform", str);
+    }
     
+    /////////////////////////////////////
+    // main
+    /////////////////////////////////////
     const el = getEl(elementId);
     const mainDiv = doc.createElement("div");
     addSvgEl(el,mainDiv)
@@ -62,12 +114,6 @@ function plotSvg(elementId, x, y, numLines,
     // write styles
     svg.innerHTML += "\<style\>\n" +
         "\<![CDATA[\n" + 
-        "text.cll {\n" + 
-        "font-size:"+legendFontSize+"px;\n" + 
-        "fill:black;\n" + 
-        "dominant-baseline:central;\n" + 
-        "font-family:"+legendFont+";\n" + 
-        "}\n" + 
         ".b:hover polyline{\n" + 
         "opacity:0.5;\n" +
         "}\n" + 
@@ -109,21 +155,22 @@ function plotSvg(elementId, x, y, numLines,
         // create legend items
         for(let lnIdx = 0; lnIdx < nLegend; ++lnIdx) {
             const yOffset = lnIdx * (legendFontSize + legendYSpacing) +  legendYSpacing;    
-            const legItemGroup = new addSvgEl(svgLeg, "g", {"id": "lgi_"+elementId+"_"+lnIdx});
+            const legItemGroup = addSvgEl(svgLeg, "g", {"id": "lgi_"+elementId+"_"+lnIdx});
       
             // legend labels
-            const textEl = addSvgEl(legItemGroup, "text", {"id": "lti_"+elementId+"_"+lnIdx, "class":"cll", 
-                "x":legendXSpacing+legendLineLength+legendXSpacing, "y":yOffset+legendFontSize/2});
+            let str = "";
+            if(lnIdx < length(legendTmp)) {
+                str = legendTmp[lnIdx];
+            };
+            addSvgTxt(legItemGroup, str,2*legendXSpacing+legendLineLength, yOffset+0.85*legendFontSize,legendFontSize, 
+                "start", legendFont);
+   
             // legend lines
             const y0 = yOffset+legendFontSize/2;
             addSvgPolyLn(legItemGroup, legendXSpacing +  "," +y0 + " " + (legendXSpacing+legendLineLength/2) +  "," +y0 + 
                                         " " + (legendXSpacing+legendLineLength) +  "," +y0);
             //setAttr(lli, "id", "lli_"+elementId+"_"+lnIdx);
-            let str = "";
-            if(lnIdx < length(legendTmp)) {
-                str = legendTmp[lnIdx];
-            };
-            textEl.append(doc.createTextNode(str));              
+                   
         };
         const bbox = gleg.getBBox();
         hSvgLeg = (legendFontSize+legendYSpacing)*nLegend + legendYSpacing;
@@ -331,7 +378,7 @@ function plotSvg(elementId, x, y, numLines,
         for(let lnIdx = 0; lnIdx < numLines; ++lnIdx) {
             const colorIdx = lnIdx % length(colorMapRGB);
             const dashStyle = isArray(style) ? style[lnIdx] : style;
-            const markerStyle = "url(#m" + (Array.isArray(marker) ? marker[lnIdx] : marker) +"_"+elementId+ ")";  
+            const markerStyle = "url(#m" + (isArray(marker) ? marker[lnIdx] : marker) +"_"+elementId+ ")";  
             const colorStr = isArray(color) ? ((lnIdx < length(color)) ? color[lnIdx] : "") : color;
             const colorSel = (colorStr == "") ?  colorMapRGB[colorIdx] : colorStr;
 
@@ -456,6 +503,7 @@ function plotSvg(elementId, x, y, numLines,
    
     new ResizeObserver(() => resizeSvg()).observe(svg);
     resizeSvg(); // execute once for proper scaling of several elements
+
 
     function setLim(vals, lim) {
         if(length(lim) < 2) {
@@ -858,6 +906,7 @@ function plotSvg(elementId, x, y, numLines,
         setAxesLim(nlim);
     };
     
+   
     function createGrid(lim){ 
         const tickOvr = [xTickInt, yTickInt];
         const ticklbl = [xticklbl, yticklbl];
@@ -865,6 +914,7 @@ function plotSvg(elementId, x, y, numLines,
         const bb = [0,0];
         // remove old grid before creating a new one
         const gridEl = doc.getElementsByClassName("cg_"+elementId);
+   
         while (length(gridEl) > 0) gridEl[0].remove(); 
 
         for(let axIdx = 0; axIdx<2;++axIdx)  {
@@ -902,9 +952,9 @@ function plotSvg(elementId, x, y, numLines,
             defaultAngle -= (axIdx) ? 90 : 0;
             defaultAngle = defaultAngle % 180;
 
-            const pos = calcTickPos(ticks, lim[axIdx], lim[2+axIdx]);       
+             // calculates the coordiantes of the ticks based on values 
+            const pos = ticks.map( x => 100*(x - lim[axIdx]) /  lim[2+axIdx]);
             const textAnchor = (defaultAngle < -11) ? "end" :  ((defaultAngle > 11) ? "start" : "middle");
-            
             
             for(let idx = 0; idx < length(ticks); ++idx) {
                 //const tickPos =  tickOffset + dTick * idx; 
@@ -930,24 +980,14 @@ function plotSvg(elementId, x, y, numLines,
         return bb;
     };
 
-    // calculates the coordiantes of the ticks based on values 
-    function calcTickPos(values, startPos, range) {
-        const pos = Array(length(values));
-        for(let idx = 0; idx < length(values); ++idx)
-            pos [idx] = 100*(values[idx] - startPos) / range;
-
-        return pos;
-    };
-
+   
     // calculates the space between ticks
     function calcTick(range, nTicks, logScale) {
         let tick = range/nTicks;		
         // round to next decade
         const exponent = floor(log10(tick));
         const mantissa = ceil(tick/(10**exponent));
-        const normTickIdx=normTicks.findIndex(function(number) {
-            return number >= mantissa;
-        });
+        const normTickIdx=normTicks.findIndex(number => number >= mantissa);
         tick = normTicks[normTickIdx] * (10**exponent);
         // keep 1 decade tick until there is at least 1 decade range
         return (logScale && range>=1 && tick < 1) ? 1 : tick; 
@@ -1022,18 +1062,18 @@ function plotSvg(elementId, x, y, numLines,
         // due to rounding errros it can happen numel is to small
         let numel = floor((stop-start)/increment*(1+1e-12))+1;
         
-        out = Array(numel);
+        out = array(numel);
     
-        for(let idx=0; idx < numel; ++idx){
+        for(let idx=0; idx < numel; ++idx)
             out[idx] = start + increment*idx;
-        };
+
         return out;
     };
 
     function num2eng(val) {
         const unitList = ['y', 'z', 'a', 'f', 'p', 'n', 'u', 'm', '', 'k', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y'];
         const zeroIndex = 8;
-        const out = Array(length(val));
+        const out = array(length(val));
         const nVal = length(val);
         const nUnits = length(unitList);
     
@@ -1053,68 +1093,6 @@ function plotSvg(elementId, x, y, numLines,
         return out;
     };
 
-    function getEl(id){
-        return doc.getElementById(id);
-    };
-    function setAttr(obj, field, val) {
-        obj.setAttribute(field, val);
-    };
-    function getAttr(obj, field) {
-        return obj.getAttribute(field);
-    };
-    function length(element) {
-        return element.length;
-    }
-    function size(element) {
-        return [element.x.baseVal.value, element.y.baseVal.value, 
-                element.width.baseVal.value, element.height.baseVal.value];
-    };
-    function view(element) {
-        return [element.viewBox.baseVal.x, element.viewBox.baseVal.y, 
-            element.viewBox.baseVal.width, element.viewBox.baseVal.height];
-    };
-    function transform(element, translate, scale){
-        let str = (translate!=null) ? "translate("+translate[0]+" "+translate[1]+")" : "";
-        str += (scale!=null) ? "scale("+scale[0]+" "+scale[1]+")" : "";
-        element.setAttribute("transform", str);
-    }
-    
-    function addSvgEl(parent, ele, attrs) {
-        //create the element with a specified string:
-        const element = (typeof ele == "string") ? doc.createElementNS(ns, ele) : ele;
-        //create a for...in loop set attributes:
-        for (let val in attrs) {
-            setAttr(element, val, attrs[val]);        
-        };
-        if(parent != null)
-            parent.appendChild(element);
-        //return the element with the set attributes:
-        return element;
-    };
-    function addSvgTxt(parent, text, x, y, fontsize, textanchor = "middle", fontfamily=defaultFont, fill="black") {
-        const textEl = addSvgEl(parent, "text", {"x":x, "y":y,
-                "fill":fill, "font-size":fontsize, "text-anchor":textanchor, "font-family":fontfamily,
-                "stroke-width": 1
-                });
-        textEl.append(doc.createTextNode(text));              
-        return textEl;
-    }
-    function addSvgLn(parent, x1, y1, x2,y2, stroke="black", strokedasharray="", stroke_width=1) {
-        return addSvgEl(parent, "line", {"x1":x1, "y1":y1,"x2":x2, "y2":y2,
-                "stroke":stroke, "stroke-width": stroke_width, "stroke-dasharray": strokedasharray, "vector-effect":"non-scaling-stroke"
-        });  
-    };
-    function addSvgPolyLn(parent, points="", stroke="black", strokedasharray="", stroke_width=2) {
-        return addSvgEl(parent, "polyline", {"points":points, "fill": "none",
-                "stroke":stroke, "stroke-width": stroke_width, "stroke-dasharray": strokedasharray, "vector-effect":"non-scaling-stroke"
-        });  
-    };
-    
-    function addSvgRec(parent, x, y, width, height, fill="none", stroke="none", stroke_width=2, rx=0) {
-        return addSvgEl(parent, "rect", {"x":x, "y":y,"width":width, "height":height, "rx":rx,
-                "stroke":stroke, "stroke-width": stroke_width, "fill": fill, "vector-effect":"non-scaling-stroke"
-        });  
-    };
 };
 
 };

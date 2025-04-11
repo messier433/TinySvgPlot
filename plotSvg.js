@@ -159,9 +159,9 @@ function plotSvg(elementId, x, y, numLines,
       
             // legend labels
             let str = "";
-            if(lnIdx < length(legendTmp)) {
+            if(lnIdx < length(legendTmp)) 
                 str = legendTmp[lnIdx];
-            };
+            
             addSvgTxt(legItemGroup, str,2*legendXSpacing+legendLineLength, yOffset+0.85*legendFontSize,legendFontSize, 
                 "start", legendFont);
    
@@ -778,7 +778,7 @@ function plotSvg(elementId, x, y, numLines,
         const prefix = "pl_" + elementId;
         const lnId = closestEl.id;
         const lnIdx = lnId.slice(length(prefix), length(lnId)); // substring includes "_"
-        const legendItem = getEl("lti_"+elementId+lnIdx);
+        const legendItem = getEl("lgi_"+elementId+lnIdx);
         const plotLine = closestEl.childNodes[0];//getEl("pl_"+elementId+lnIdx);
         const lineColor = getAttr(plotLine, "stroke");
         const sourceCoord = convertCoord([intX, intY], pltLim, logScale);

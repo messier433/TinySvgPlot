@@ -12,7 +12,7 @@ const zoomButton = 2; // 0 is left mouse button; 1: middle mouse button; 2: righ
 const panButton = 1; // 0 is left mouse button; 1: middle mouse button (recommended); 2: right mouse button
 const axesLblFontSize = 12;
 const legendFontSize = 10;
-const legendFont = "Lucida Sans Typewriter";
+const legendFont = "Lucida Sans Typewriter,Courier";
 const legendLineLength = 30; // number of pixels for the line length in the legend
 const legendXSpacing = 4; // number of pixels between legend box, line and text
 const legendYSpacing = 4; // number of pixels between two entries
@@ -411,6 +411,7 @@ function plotSvg(elementId, x, y, numLines,
             for(let ptIdx = 0; ptIdx < numPtPerLine; ++ptIdx) {
                 const ptx = varX ? xInt[lnIdx*numPtPerLine  + ptIdx] : xInt[ptIdx];
                 const pty = yInt[lnIdx*numPtPerLine  + ptIdx];
+                const point = svgDraw.createSVGPoint();
 
                 if (!isFinite(ptx) || !isFinite(pty)) {
                     poly = null; // interrupt line
@@ -421,9 +422,8 @@ function plotSvg(elementId, x, y, numLines,
                     poly = addSvgPolyLn(polyGrp, "", colorSel, dashStr, strokeWidth);
                     addSvgEl(null, poly, {"marker-start":markerStyle, "marker-mid":markerStyle, "marker-end":markerStyle, 
                         "stroke-width":strokeWidth});
-                }
+                }                
                 
-                const point = svgDraw.createSVGPoint();
                 point.x = 100*(ptx-pltLim[0])/ pltLim[2];
                 point.y = 100-100*(pty-pltLim[1]) / pltLim[3];
                 poly.points.appendItem(point);
@@ -486,10 +486,7 @@ function plotSvg(elementId, x, y, numLines,
     downloadBtn.onclick = () => {downloadSvg()};
     // add custom buttons
     let btnXOffset = 0;
-    for(let idx = 0; idx<length(buttons); ++idx) {
-        const button = buttons[idx];
-        addToggleButton(button.text, eval(button.init), button.callback, button.redraw, button.hover);
-    };
+    buttons.forEach(button => addToggleButton(button));
 
     // add event callbacks
     svg.oncontextmenu = (event) => {event.preventDefault()}; // prevent context menu during zoom
@@ -525,15 +522,15 @@ function plotSvg(elementId, x, y, numLines,
         return lim;
     };
 
-    function addToggleButton(text, initState, callback=null, redraw = 1, hoverStr="") {
+    function addToggleButton(button) {
         const tglBtn = addSvgEl(btnGrp, "g", {"pointer-events": "visible"});
-        const hover = addSvgEl(tglBtn, "title");
-        hover.append(doc.createTextNode(hoverStr));   
+        const hover = addSvgEl(tglBtn, "title");        
         const rec = addSvgRec(tglBtn, 0, -14, 0, 18, "none");  // invisible rectangle for click event
         //addSvgRec(logBtn, 0, -14, 36, 18, "none", "#73AFD7", 2.5, 3);  // invisible rectangle for click event
-        const lbl = addSvgTxt(tglBtn, text, 3,-1,12, "start", defaultFont, "grey");
+        const lbl = addSvgTxt(tglBtn, button.text, 3,-1,12, "start", defaultFont, "grey");
         const bbw = lbl.getBBox().width + 6;
-        let isClicked = initState;
+        let isClicked = eval(button.init);
+        hover.append(doc.createTextNode(button.hover));   
         
         addSvgEl(null, rec, {"width": bbw, "rx":3});
         changeStatus(isClicked);
@@ -541,12 +538,12 @@ function plotSvg(elementId, x, y, numLines,
         tglBtn.onclick = () => {
             isClicked = !isClicked;
             changeStatus(isClicked);
-            if(callback != null) {
-                attrs = callback(isClicked);
+            if(button.callback != null) {
+                attrs = button.callback(isClicked);
                 for (let val in attrs) 
                     eval(val+"=" + attrs[val]);
             };
-            if(redraw) {
+            if(button.redraw) {
                 draw();resizeSvg();
             };
         };
@@ -570,8 +567,7 @@ function plotSvg(elementId, x, y, numLines,
             "class":"marker_" + elementId});
         transform(markerGrp, [5,5], [1,1]);
     
-        for(let idx = 0; idx < length(elements); ++idx)
-            addSvgEl(markerGrp, elements[idx]);
+        elements.forEach(element => addSvgEl(markerGrp, element));
     
         // copy to legend
         const markerClone = addSvgEl(defsLeg, marker.cloneNode(true), {"id":"ml"+id+"_"+elementId});
@@ -783,10 +779,9 @@ function plotSvg(elementId, x, y, numLines,
         const lineColor = getAttr(plotLine, "stroke");
         const sourceCoord = convertCoord([intX, intY], pltLim, logScale);
         let gl = getEl("gpl_" +elementId+lnIdx);
-        if(gl == null) { // create group for all datatips on the same line (to be used in case line vibility is toggled)
-            //gl = addSvgEl(svg, "g", {"id":"gpl_" + elementId+lnIdx});
+        if(gl == null)  // create group for all datatips on the same line (to be used in case line vibility is toggled)
             gl = addSvgEl(svgDraw, "g", {"id":"gpl_" + elementId+lnIdx});
-        }
+        
         const datatip = addSvgEl(gl, "g", {"class":"marker_"+elementId});
         const lbl = addSvgEl(datatip, "g");        
         const rect = addSvgRec(lbl, 0, -33, 1, 33, lineColor, "#DFDFDF", 1, rx=4);
@@ -1046,24 +1041,22 @@ function plotSvg(elementId, x, y, numLines,
         const newW = x - x0;
         const newH = y - y0;
         const isPan = getAttr(rectZoom,"fill-opacity") == 0;
-        if(isPan || newW >= 0) {
+        if(isPan || newW >= 0)
             setAttr(rectZoom, "width", newW);
-        } else {
+        else
             addSvgEl(null, rectZoom, {"width": -newW, "x":x});
-        };
-        if(isPan || newH >= 0) {
+
+        if(isPan || newH >= 0)
             setAttr(rectZoom, "height", newH);
-        } else {
+        else
             addSvgEl(null, rectZoom, {"height": -newH, "y":y});
-        };
     };
 
     function linspace(start, increment, stop) {
         // due to rounding errros it can happen numel is to small
         let numel = floor((stop-start)/increment*(1+1e-12))+1;
         
-        out = array(numel);
-    
+        out = array(numel);    
         for(let idx=0; idx < numel; ++idx)
             out[idx] = start + increment*idx;
 
@@ -1081,12 +1074,10 @@ function plotSvg(elementId, x, y, numLines,
             
             const nn = val[idx].toExponential(5).split(/e/);
             let u = floor(+nn[1] / 3) + zeroIndex;
-            if (u > nUnits - 1) {
+            if (u > nUnits - 1)
                 u = nUnits - 1;
-            } else
-            if (u < 0) {
+            else if (u < 0) 
                 u = 0;
-            };
     
             out[idx] =  round((nn[0] * (10 ** ( +nn[1] - (u - zeroIndex) * 3)))*1000)/1000 + unitList[u];
         };

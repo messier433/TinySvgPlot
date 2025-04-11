@@ -39,6 +39,7 @@ const array = Array;
 const isArray = array.isArray;
 const Inf = Infinity;
 const doc =document;
+const NULL = null;
 
 function plotSvg(elementId, x, y, numLines, 
 {color = "", title = "", subtitle = "", xlabel = "", ylabel="", xlim=[], ylim=[], 
@@ -57,7 +58,7 @@ function plotSvg(elementId, x, y, numLines,
         for (let val in attrs) {
             setAttr(element, val, attrs[val]);        
         };
-        if(parent != null)
+        if(parent != NULL)
             parent.appendChild(element);
         //return the element with the set attributes:
         return element;
@@ -93,8 +94,8 @@ function plotSvg(elementId, x, y, numLines,
     const view = element => [element.viewBox.baseVal.x, element.viewBox.baseVal.y, 
             element.viewBox.baseVal.width, element.viewBox.baseVal.height];
     const transform = (element, translate, scale) => {
-        let str = (translate!=null) ? "translate("+translate[0]+" "+translate[1]+")" : "";
-        str += (scale!=null) ? "scale("+scale[0]+" "+scale[1]+")" : "";
+        let str = (translate!=NULL) ? "translate("+translate[0]+" "+translate[1]+")" : "";
+        str += (scale!=NULL) ? "scale("+scale[0]+" "+scale[1]+")" : "";
         element.setAttribute("transform", str);
     }
     
@@ -124,15 +125,15 @@ function plotSvg(elementId, x, y, numLines,
     // create legend
     //////////////////////////////////////
     // create group
-    const gleg = addSvgEl(null, "g", {"pointer-events":"visible"});
+    const gleg = addSvgEl(NULL, "g", {"pointer-events":"visible"});
     gleg.onclick = (event) => legClicked(event, 0);
     gleg.ondblclick = (event) => legClicked(event, numLines);
    
 
     let legFill = (legendLocation == 'northeast') ? "white" : "none";
-    let svgLeg = null; // define already here
-    let recleg  = null;
-    let defsLeg  = null;
+    let svgLeg = NULL; // define already here
+    let recleg  = NULL;
+    let defsLeg  = NULL;
     let hSvgLeg = 0;
     let wSvgLeg = 0;
     if(length(legend)>0 && numLines > 0 && length(x) > 0) {  
@@ -151,7 +152,7 @@ function plotSvg(elementId, x, y, numLines,
         
         // draw legend box (change width later)       
         recleg = addSvgRec(svgLeg, 0, 0, 0, "100%", legFill, "black");
-        addSvgEl(null, recleg, {"id":"rect_leg_"+elementId});
+        addSvgEl(NULL, recleg, {"id":"rect_leg_"+elementId});
         // create legend items
         for(let lnIdx = 0; lnIdx < nLegend; ++lnIdx) {
             const yOffset = lnIdx * (legendFontSize + legendYSpacing) +  legendYSpacing;    
@@ -218,7 +219,7 @@ function plotSvg(elementId, x, y, numLines,
     const svgLeft= addSvgEl(svg, "svg", {"id":"sy_"+elementId, "overflow":"visible"});
     if(length(ylabel)>0) { 
         const text = addSvgTxt(svgLeft, ylabel, "100%", "50%", axesLblFontSize);
-        addSvgEl(null, text,  {"writing-mode":"vertical-rl", "transform-origin": "center"});
+        addSvgEl(NULL, text,  {"writing-mode":"vertical-rl", "transform-origin": "center"});
         transform(text, [axesLblFontSize, 0], [-1,-1])
     };
 
@@ -244,8 +245,8 @@ function plotSvg(elementId, x, y, numLines,
     let gridMinorSet = [];
     let tickMinorSet = [];
     let pltLim = [];
-    let defsDraw = null;
-    let plRec = null;
+    let defsDraw = NULL;
+    let plRec = NULL;
 
     draw();
 
@@ -257,19 +258,19 @@ function plotSvg(elementId, x, y, numLines,
         defsDraw = addSvgEl(svgDraw, "defs");
         if(marker != "") {
             //"o","+", "*", ".", "x", "_", "|", "sq"
-            addMarker("o", [addSvgEl(null, "circle", {"r":"5"})], 1);
-            addMarker("+", [addSvgLn(null, 0, -5, 0, 5, "", "", ""), addSvgLn(null, -5, 0, 5, 0, "", "", "")]);
-            addMarker("*", [addSvgLn(null, 0, -5, 0, 5, "", "", ""), addSvgLn(null, -5, 0, 5, 0, "", "", ""),
-                                                    addSvgLn(null, -3.5, -3.5, 3.5, 3.5, "", "", ""), addSvgLn(null, -3.5, 3.5, 3.5, -3.5, "", "", "")]);
-            addMarker(".", [addSvgEl(null, "circle", {"r":"1.5", "stroke-width":3})]);
-            addMarker("x", [addSvgLn(null, -3.5, -3.5, 3.5, 3.5, "","",""), addSvgLn(null, -3.5, 3.5, 3.5, -3.5, "","","")]);
-            addMarker("_", [addSvgLn(null, -5, 0, 5, 0, "","","")]);
-            addMarker("|", [addSvgLn(null, 0, -5, 0, 5, "","","")]);
-            addMarker("sq", [addSvgRec(null,-5,-5,10,10,"", "", "")], 1);
-            addMarker("^", [addSvgEl(null, "polygon", {"points":"-5 3, 0 -5, 5 3"})], 1);
-            addMarker("v", [addSvgEl(null, "polygon", {"points":"-5 -3, 0 5, 5 -3"})], 1);
-            addMarker("tr", [addSvgEl(null, "polygon", {"points":"-3 -5, 5 0, -3 5"})], 1);
-            addMarker("tl", [addSvgEl(null, "polygon", {"points":"-5 0, 3 5, 3 -5"})], 1);
+            addMarker("o", [addSvgEl(NULL, "circle", {"r":"5"})], 1);
+            addMarker("+", [addSvgLn(NULL, 0, -5, 0, 5, "", "", ""), addSvgLn(NULL, -5, 0, 5, 0, "", "", "")]);
+            addMarker("*", [addSvgLn(NULL, 0, -5, 0, 5, "", "", ""), addSvgLn(NULL, -5, 0, 5, 0, "", "", ""),
+                                                    addSvgLn(NULL, -3.5, -3.5, 3.5, 3.5, "", "", ""), addSvgLn(NULL, -3.5, 3.5, 3.5, -3.5, "", "", "")]);
+            addMarker(".", [addSvgEl(NULL, "circle", {"r":"1.5", "stroke-width":3})]);
+            addMarker("x", [addSvgLn(NULL, -3.5, -3.5, 3.5, 3.5, "","",""), addSvgLn(NULL, -3.5, 3.5, 3.5, -3.5, "","","")]);
+            addMarker("_", [addSvgLn(NULL, -5, 0, 5, 0, "","","")]);
+            addMarker("|", [addSvgLn(NULL, 0, -5, 0, 5, "","","")]);
+            addMarker("sq", [addSvgRec(NULL,-5,-5,10,10,"", "", "")], 1);
+            addMarker("^", [addSvgEl(NULL, "polygon", {"points":"-5 3, 0 -5, 5 3"})], 1);
+            addMarker("v", [addSvgEl(NULL, "polygon", {"points":"-5 -3, 0 5, 5 -3"})], 1);
+            addMarker("tr", [addSvgEl(NULL, "polygon", {"points":"-3 -5, 5 0, -3 5"})], 1);
+            addMarker("tl", [addSvgEl(NULL, "polygon", {"points":"-5 0, 3 5, 3 -5"})], 1);
         }
 
         logScale = [false, false];
@@ -397,14 +398,14 @@ function plotSvg(elementId, x, y, numLines,
                 case "*":
                     strokeWidth = 0;
             };
-            const hideLn = svgLeg != null && getEl("lgi_"+elementId+"_"+lnIdx).style.opacity == 0.3;         
+            const hideLn = svgLeg != NULL && getEl("lgi_"+elementId+"_"+lnIdx).style.opacity == 0.3;         
             const polyGrp = addSvgEl(gp, "g", {"id": "pl_" +elementId+"_"+lnIdx});
             polyGrp.style.display = (hideLn) ? "none" : "block";
-            let poly = null;
+            let poly = NULL;
             //poly.setAttribute("shape-rendering","optimizeSpeed ");
-            if(svgLeg!=null) {
+            if(svgLeg!=NULL) {
                 const markerStyle = "url(#ml" + (isArray(marker) ? marker[lnIdx] : marker) +"_"+elementId+ ")";  
-                addSvgEl(null, svgLeg.childNodes[lnIdx+2].childNodes[1], {"stroke-dasharray": dashStr,
+                addSvgEl(NULL, svgLeg.childNodes[lnIdx+2].childNodes[1], {"stroke-dasharray": dashStr,
                     "marker-mid":markerStyle, "stroke-width":strokeWidth, "stroke": colorSel});
             };
 
@@ -414,13 +415,13 @@ function plotSvg(elementId, x, y, numLines,
                 const point = svgDraw.createSVGPoint();
 
                 if (!isFinite(ptx) || !isFinite(pty)) {
-                    poly = null; // interrupt line
+                    poly = NULL; // interrupt line
                     continue;
                 }
 
-                if(poly == null) {
+                if(poly == NULL) {
                     poly = addSvgPolyLn(polyGrp, "", colorSel, dashStr, strokeWidth);
-                    addSvgEl(null, poly, {"marker-start":markerStyle, "marker-mid":markerStyle, "marker-end":markerStyle, 
+                    addSvgEl(NULL, poly, {"marker-start":markerStyle, "marker-mid":markerStyle, "marker-end":markerStyle, 
                         "stroke-width":strokeWidth});
                 }                
                 
@@ -431,7 +432,7 @@ function plotSvg(elementId, x, y, numLines,
             };                
         };
         plRec = addSvgRec(svgDraw, 0, 0, "100%", "100%", "none", "black");
-        addSvgEl(null, plRec, {"id":"plr_"+elementId,"pointer-events": "visible"});
+        addSvgEl(NULL, plRec, {"id":"plr_"+elementId,"pointer-events": "visible"});
         plRec.onclick = (event) => plotClicked(event);
     };
     //////////////////////////////
@@ -453,15 +454,15 @@ function plotSvg(elementId, x, y, numLines,
     const padding = [svgSz[2]-pltAr[2], svgSz[3]-pltAr[3]];
     const xleg = svgSz[2]-wSvgLeg-legendXSpacing - wLegendMargin;
     const yleg = hSvgTop + hLegendMargin/2;
-    addSvgEl(null, svgBg, {"width":pltAr[2], "height":pltAr[3], "x":pltAr[0], "y":pltAr[1]});
-    addSvgEl(null, svgDraw, {"width":pltAr[2], "height":pltAr[3], "x":pltAr[0], "y":pltAr[1]});
-    addSvgEl(null, svgLeft, {"width": pltAr[0], "y": pltAr[1], "height":pltAr[3]});
+    addSvgEl(NULL, svgBg, {"width":pltAr[2], "height":pltAr[3], "x":pltAr[0], "y":pltAr[1]});
+    addSvgEl(NULL, svgDraw, {"width":pltAr[2], "height":pltAr[3], "x":pltAr[0], "y":pltAr[1]});
+    addSvgEl(NULL, svgLeft, {"width": pltAr[0], "y": pltAr[1], "height":pltAr[3]});
     transform(gBottom, [pltAr[0], gBottomShift ]);
-    addSvgEl(null, svgBottom, {"y":"100%", "width":pltAr[2], "height": hSvgBtm});
-    addSvgEl(null, svgTop, {"x": pltAr[0], "width":pltAr[2]});
-    if (svgLeg != null) {
+    addSvgEl(NULL, svgBottom, {"y":"100%", "width":pltAr[2], "height": hSvgBtm});
+    addSvgEl(NULL, svgTop, {"x": pltAr[0], "width":pltAr[2]});
+    if (svgLeg != NULL) {
         transform(gleg, [xleg, yleg]);
-        addSvgEl(null, svgLeg, {"height": hSvgLeg, "width":wSvgLeg,
+        addSvgEl(NULL, svgLeg, {"height": hSvgLeg, "width":wSvgLeg,
             "viewBox": "0 0 " + wSvgLeg + " " + hSvgLeg});
     
         // update width of legend rectangle and clip box
@@ -532,13 +533,13 @@ function plotSvg(elementId, x, y, numLines,
         let isClicked = eval(button.init);
         hover.append(doc.createTextNode(button.hover));   
         
-        addSvgEl(null, rec, {"width": bbw, "rx":3});
+        addSvgEl(NULL, rec, {"width": bbw, "rx":3});
         changeStatus(isClicked);
         transform(tglBtn, [btnXOffset, -8]);
         tglBtn.onclick = () => {
             isClicked = !isClicked;
             changeStatus(isClicked);
-            if(button.callback != null) {
+            if(button.callback != NULL) {
                 attrs = button.callback(isClicked);
                 for (let val in attrs) 
                     eval(val+"=" + attrs[val]);
@@ -549,7 +550,7 @@ function plotSvg(elementId, x, y, numLines,
         };
 
         function changeStatus(clicked) {
-            addSvgEl(null, rec, {"stroke":(clicked) ? "#73AFD7" : "#A0A0A0", 
+            addSvgEl(NULL, rec, {"stroke":(clicked) ? "#73AFD7" : "#A0A0A0", 
                 "stroke-width":(clicked) ? 2.5 : 1.5});
             setAttr(lbl, "fill", (clicked)? "#black" : "grey");
         }
@@ -601,7 +602,7 @@ function plotSvg(elementId, x, y, numLines,
         const str =(visible) ? "block" : "none";        
         getEl("pl_"+elementId+"_"+lnIdx).style.display = str;              
         getEl("lgi_"+elementId+"_"+lnIdx).style.opacity = 0.3+0.7*visible;
-        if(datatips!=null) datatips.style.display = str;
+        if(datatips!=NULL) datatips.style.display = str;
     }
 
     function legClicked(event, numLines) {
@@ -611,7 +612,7 @@ function plotSvg(elementId, x, y, numLines,
         const lnIdx = floor((legY-legendYSpacing/2) / (legendFontSize+legendYSpacing));
         const clkLn = getEl("pl_"+elementId+"_"+lnIdx);
         
-        if(clkLn == null)
+        if(clkLn == NULL)
             return;
 
         const visible = clkLn.style.display != "none";   
@@ -639,14 +640,14 @@ function plotSvg(elementId, x, y, numLines,
             setAttr(svgBg, "width", newChildWidth);            
             setAttr(svgTop, "width", newChildWidth);    
             setAttr(svgBottom, "width", newChildWidth); 
-            if(svgLeg!=null) svgLeg.x.baseVal.value += newChildWidth - childSz[2];  
+            if(svgLeg!=NULL) svgLeg.x.baseVal.value += newChildWidth - childSz[2];  
             downloadBtn.transform.baseVal[0].matrix.e += newChildWidth - childSz[2];   
         }
         if(childSz[3] != newChildHeight) {
             setAttr(svgDraw, "height",  newChildHeight);
             setAttr(svgBg, "height", newChildHeight);    
             setAttr(svgLeft, "height", newChildHeight); 
-            if(svgLeg!=null) {
+            if(svgLeg!=NULL) {
                 let newLegHeight = newChildHeight -hLegendMargin;
                 newLegHeight = (newLegHeight > hLegendItems) ? hLegendItems : newLegHeight;
                 setAttr(svgLeg, "height", newLegHeight);
@@ -687,7 +688,7 @@ function plotSvg(elementId, x, y, numLines,
 
     // find a nearest line within 'proximity'
     function getNearestLine(elementId, Cx, Cy, dx, dy) {
-        let closestEl = null;
+        let closestEl = NULL;
         let closestDist = Inf;
         let closestXproj = 0;
         let closestYproj = 0;
@@ -743,7 +744,7 @@ function plotSvg(elementId, x, y, numLines,
                         closestXproj = xproj;
                         closestYproj = yproj;
                     } else {
-                        closestEl = null;
+                        closestEl = NULL;
                     };          
                 };
             };
@@ -763,7 +764,7 @@ function plotSvg(elementId, x, y, numLines,
         const detY = dSnap * scaleY;
         result = getNearestLine(elementId, plotX, plotY, detX, detY);
         const closestEl = result.ele;
-        if(closestEl == null)
+        if(closestEl == NULL)
             return;    
        
         const intX = result.x;
@@ -779,7 +780,7 @@ function plotSvg(elementId, x, y, numLines,
         const lineColor = getAttr(plotLine, "stroke");
         const sourceCoord = convertCoord([intX, intY], pltLim, logScale);
         let gl = getEl("gpl_" +elementId+lnIdx);
-        if(gl == null)  // create group for all datatips on the same line (to be used in case line vibility is toggled)
+        if(gl == NULL)  // create group for all datatips on the same line (to be used in case line vibility is toggled)
             gl = addSvgEl(svgDraw, "g", {"id":"gpl_" + elementId+lnIdx});
         
         const datatip = addSvgEl(gl, "g", {"class":"marker_"+elementId});
@@ -796,10 +797,10 @@ function plotSvg(elementId, x, y, numLines,
             }
         };   
         
-        if(legendItem != null) {
+        if(legendItem != NULL) {
             text = addSvgTxt(lbl, legendItem.textContent, 2, -35, 12, "start", defaultFont, "white" ); 
-            addSvgEl(null, text, {"font-weight":"bold"});
-            addSvgEl(null, rect, {"y":-48, "height":48});
+            addSvgEl(NULL, text, {"font-weight":"bold"});
+            addSvgEl(NULL, rect, {"y":-48, "height":48});
         }
 
         addSvgTxt(lbl, "x: " + num2eng([sourceCoord[0]]), 2, -19, 12, "start", defaultFont, "white");
@@ -807,8 +808,8 @@ function plotSvg(elementId, x, y, numLines,
                 
         const bbox = datatip.getBBox();
         const bb = [bbox.width+4, bbox.height];
-        addSvgEl(null, rect, {"width": bb[0]});
-        if(legendItem != null)
+        addSvgEl(NULL, rect, {"width": bb[0]});
+        if(legendItem != NULL)
             addSvgLn(lbl, 0, -31,  bb[0],-31, "white");
         const lblLn = addSvgLn(datatip, 0, 0,  6,-6);
 
@@ -836,7 +837,7 @@ function plotSvg(elementId, x, y, numLines,
                 scaleLnY =  -1;
             };
             transform(lbl, [shiftLblX,shiftLblY]);
-            transform(lblLn, null, [scaleLnX,scaleLnY]);
+            transform(lblLn, NULL, [scaleLnX,scaleLnY]);
         };
 
         addSvgRec(datatip, -2, -2, 4, 4, "black");
@@ -867,7 +868,7 @@ function plotSvg(elementId, x, y, numLines,
         svgDraw.viewBox.baseVal.y = shiftY;
     
         // shift plot-area rectangle to new viewbox
-        addSvgEl(null, plRec, {"x":shiftX, "y":shiftY});        
+        addSvgEl(NULL, plRec, {"x":shiftX, "y":shiftY});        
 
         createGrid(lim);
         updateMarkerPos();
@@ -876,8 +877,8 @@ function plotSvg(elementId, x, y, numLines,
     function plotZoom() {
         const rectZoom = getEl("zoom_rect"+elementId);
         svgDraw.style.cursor = "crosshair";
-        svg.onmousemove = null; // disable move event to aovid unnessary callbacks
-        if(rectZoom == null)
+        svg.onmousemove = NULL; // disable move event to aovid unnessary callbacks
+        if(rectZoom == NULL)
             return;
     
         const isPan = getAttr(rectZoom,"fill-opacity") == 0;
@@ -957,11 +958,11 @@ function plotSvg(elementId, x, y, numLines,
                 const c = (axIdx) ? [0,tickPos] : [tickPos, 0];
                 const tc = (axIdx) ? ["100%",tickPos+"%"] : 
                     [tickPos+"%", fontSpacing + axesLblFontSize*0.5*(textAnchor=="middle")];
-                let textEl = null; 
+                let textEl = NULL; 
                 //size(svgAx)[2] - axesLblFontSize*0.5
                 if(pos[idx] >= 0 && (idx > 0 || tickOvr)) {
                     textEl = addSvgTxt(lblGrp, tickLabel[idx], tc[0], tc[1], axesLblFontSize, textAnchor);    
-                    addSvgEl(null,textEl,{"dominant-baseline":"central", "class":"cg_" +elementId,
+                    addSvgEl(NULL,textEl,{"dominant-baseline":"central", "class":"cg_" +elementId,
                         "transform":"translate(-" + axesLblFontSize*0.5*axIdx + " 0) rotate(" + tickangle[axIdx] + ")", 
                         "transform-origin": tc[0] + " "+  tc[1]
                     });
@@ -1012,8 +1013,8 @@ function plotSvg(elementId, x, y, numLines,
         const endTick = addSvgLn(parent, -x[2], -x[3], 0, 0);
         transform(startTick, [x[0],x[1]], [1, 1]);
         transform(endTick, [x[4],x[5]], [1, 1]);
-        addSvgEl(null, startTick, {"class":"marker_" + elementId}); // reuse "marker" class to gete automatic resizing
-        addSvgEl(null, endTick, { "class":"marker_" + elementId}); // reuse "marker" class to gete automatic resizing
+        addSvgEl(NULL, startTick, {"class":"marker_" + elementId}); // reuse "marker" class to gete automatic resizing
+        addSvgEl(NULL, endTick, { "class":"marker_" + elementId}); // reuse "marker" class to gete automatic resizing
             
     };
 
@@ -1030,7 +1031,7 @@ function plotSvg(elementId, x, y, numLines,
         const y = event.offsetY;
         const rect = addSvgRec(svg, x, y, 0, 0, "black");
         const opacity = isPan ? 0 : 0.3; // dont show rectangle during pan
-        addSvgEl(null, rect, {"id":"zoom_rect"+elementId, "fill-opacity":opacity});
+        addSvgEl(NULL, rect, {"id":"zoom_rect"+elementId, "fill-opacity":opacity});
         svg.onmousemove = (eventNew) => plotDrawZoom(eventNew, x, y);
     };
 
@@ -1044,12 +1045,12 @@ function plotSvg(elementId, x, y, numLines,
         if(isPan || newW >= 0)
             setAttr(rectZoom, "width", newW);
         else
-            addSvgEl(null, rectZoom, {"width": -newW, "x":x});
+            addSvgEl(NULL, rectZoom, {"width": -newW, "x":x});
 
         if(isPan || newH >= 0)
             setAttr(rectZoom, "height", newH);
         else
-            addSvgEl(null, rectZoom, {"height": -newH, "y":y});
+            addSvgEl(NULL, rectZoom, {"height": -newH, "y":y});
     };
 
     function linspace(start, increment, stop) {

@@ -1,3 +1,4 @@
+GitHub:  https://github.com/messier433/TinySvgPlot
 <a href="https://messier433.github.io/TinySvgPlot/example.html" target="_blank"><img src="https://github.com/user-attachments/assets/17fffdfe-d66c-4713-b960-0d6e01751c38"/></a>
 
 Supported plot features

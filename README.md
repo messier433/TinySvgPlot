@@ -80,5 +80,3 @@ Optional parameters:
    "northeast" Inside the plot area<br />
  - linTip: Boolean that defines if tooltips can be freely placed on line or snap to points (default: true)
 
-
-<meta name="google-site-verification" content="7Bkvq1Ymbvkk38WGmu67QyV1Vp8kI3NDBMQami32Liw" />

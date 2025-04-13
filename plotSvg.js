@@ -388,7 +388,7 @@ function plotSvg(elementId, x, y, numLines,
                 case "*":
                     strokeWidth = 0;
             };
-            const hideLn = svgLeg != NULL && svgLeg.childNodes[lnIdx].style.opacity == 0.3;         
+            const hideLn = svgLeg != NULL && svgLeg.childNodes[lnIdx+1].style.opacity == 0.3;         
             const polyGrp = addSvgEl(gp, "g", {"id": "pl_" +elementId+"_"+lnIdx});
             polyGrp.style.display = (hideLn) ? "none" : "block";
             let poly = NULL;

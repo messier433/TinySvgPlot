@@ -1,5 +1,8 @@
 GitHub:  <a href="https://github.com/messier433/TinySvgPlot">https://github.com/messier433/TinySvgPlot</a>
-<a href="https://messier433.github.io/TinySvgPlot/sine.html" target="_blank"><img src="https://github.com/user-attachments/assets/17fffdfe-d66c-4713-b960-0d6e01751c38"/></a>
+<p float="left">
+  <a href="https://messier433.github.io/TinySvgPlot/sine.html" target="_blank"><img src="https://github.com/user-attachments/assets/df3835ec-7a04-4c27-b22c-3b23729f6088" width="45%"/></a>
+  <a href="https://messier433.github.io/TinySvgPlot/rand.html" target="_blank"><img src="https://github.com/user-attachments/assets/1b7215d3-5e15-458e-bfb8-9cd79231248a" width="45%"/></a>
+</p>
 
 Supported plot features
 - multiple line plots with different markers and dash styles

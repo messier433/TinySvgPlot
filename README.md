@@ -1,5 +1,5 @@
 GitHub:  <a href="https://github.com/messier433/TinySvgPlot">https://github.com/messier433/TinySvgPlot</a>
-<a href="https://messier433.github.io/TinySvgPlot/example.html" target="_blank"><img src="https://github.com/user-attachments/assets/17fffdfe-d66c-4713-b960-0d6e01751c38"/></a>
+<a href="https://messier433.github.io/TinySvgPlot/sine.html" target="_blank"><img src="https://github.com/user-attachments/assets/17fffdfe-d66c-4713-b960-0d6e01751c38"/></a>
 
 Supported plot features
 - multiple line plots with different markers and dash styles
@@ -24,6 +24,10 @@ Supported interactions:
   Mouse wheel: Scroll legend in case items do not fit in vertical legend area<br />
 - download generated SVG
 - Custom toogle buttons to change optParams dynamically
+
+Examples:<br />
+<a href="https://messier433.github.io/TinySvgPlot/sine.html" target="_blank">https://messier433.github.io/TinySvgPlot/sine.html</a><br />
+<a href="https://messier433.github.io/TinySvgPlot/rand.html" target="_blank">https://messier433.github.io/TinySvgPlot/rand.html</a><br />
 
 Function call:
 plotSvg(ID, x, y, numLines, optParam);

@@ -13,6 +13,7 @@ Supported plot features
 - title, subtitle and axes label
 - auto and custom set axes limits
 - legend inside or next to plot area
+- additional custom SVG elements (e.g. text boxes)
 
 Supported interactions:
 - auto resize to parent div dimensions

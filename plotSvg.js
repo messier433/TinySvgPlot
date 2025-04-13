@@ -91,6 +91,7 @@ function plotSvg(elementId, x, y, numLines,
     const getBb = (element) => {const bb = element.getBBox(); return [bb.x, bb.y, bb.width, bb.height]};
     const size = element => [element.x.baseVal.value, element.y.baseVal.value, 
                              element.width.baseVal.value, element.height.baseVal.value];
+    const setSize = (element, size) => addSvgEl(NULL, element, {"x":size[0], "y":size[1], "width":size[2], "height":size[3]});
     const view = element => [element.viewBox.baseVal.x, element.viewBox.baseVal.y, 
             element.viewBox.baseVal.width, element.viewBox.baseVal.height];
     const transform = (element, translate, scale) => {
@@ -147,7 +148,7 @@ function plotSvg(elementId, x, y, numLines,
         
         // create legend items
         for(let lnIdx = 0; lnIdx < nLegend; ++lnIdx) {
-            const yOffset = lnIdx * (legendFontSize + boxSpacing)+legendFontSize;// /2;    
+            const yOffset = lnIdx * (legendFontSize + boxSpacing)+legendFontSize /2;    
             const legItemGroup = addSvgEl(svgLeg, "g", {"id": "lgi_"+elementId+"_"+lnIdx});
       
             // legend labels
@@ -155,19 +156,14 @@ function plotSvg(elementId, x, y, numLines,
             if(lnIdx < length(legendTmp)) 
                 str = legendTmp[lnIdx];
             
-            const txt = addSvgTxt(legItemGroup, str,2*boxSpacing+legendLineLength, yOffset,legendFontSize, 
+            addSvgTxt(legItemGroup, str,2*boxSpacing+legendLineLength, yOffset+0.35*legendFontSize,legendFontSize, 
                 "start", legendFont);
-            const y0 = yOffset - 0.35*legendFontSize;
-            setAttr(txt,"dominant-baseline", "top");
             // legend lines
-            
-            addSvgPolyLn(legItemGroup, "0," +y0 + " " + (legendLineLength/2) +  "," +y0 + 
-                                       " " + legendLineLength +  "," +y0);
+            addSvgPolyLn(legItemGroup, "0," +yOffset + " " + (legendLineLength/2) +  "," +yOffset + 
+                                       " " + legendLineLength +  "," +yOffset);
                    
-        };
-        
+        };        
     };
-
 
     const titleLines = title.split("\n");
     const subtitleLines = subtitle.split("\n");
@@ -439,7 +435,7 @@ function plotSvg(elementId, x, y, numLines,
     const wSvgDraw = svgSz[2] - wSvgLeft - 2*axesLblFontSize;
     const pltAr = [wSvgLeft, hSvgTop, wSvgDraw, hSvgDraw];
     const gBottomShift = -svgSz[3] + pltAr[1] + pltAr[3];    
-    const wLegendMargin = 1 + 2*(legend.boxed>0)*boxSpacing + 2*legend.x; //legInside ? 2*boxSpacing : 0;
+    //const wLegendMargin = 1 + 2*(legend.boxed>0)*boxSpacing + 2*legend.x; //legInside ? 2*boxSpacing : 0;
     const hLegendMargin = 1 + 2*(legend.boxed>0)*boxSpacing + 2*legend.y; //legInside ? 2*boxSpacing : 0;
 
     if (svgLeg != NULL) {
@@ -476,12 +472,12 @@ function plotSvg(elementId, x, y, numLines,
 
     add.forEach(el => addToAnchor (el.group, el));
 
-    addSvgEl(NULL, svgBg, {"width":pltAr[2], "height":pltAr[3], "x":pltAr[0], "y":pltAr[1]});
-    addSvgEl(NULL, svgDraw, {"width":pltAr[2], "height":pltAr[3], "x":pltAr[0], "y":pltAr[1]});
-    addSvgEl(NULL, svgLeft, {"width": wSvgLeft, "x": xSvgleft, "y": pltAr[1], "height":pltAr[3]});
+    setSize(svgBg, pltAr);
+    setSize(svgDraw, pltAr);
+    setSize(svgLeft, [xSvgleft, pltAr[1],wSvgLeft,pltAr[3]]);
+    setSize(svgBottom, [0, svgSz[3]+ySvgBottom,pltAr[2],hSvgBtm]);
+    setSize(svgTop, [pltAr[0], ySvgtop,pltAr[2],hSvgTop]);
     transform(gBottom, [pltAr[0], gBottomShift ]);
-    addSvgEl(NULL, svgBottom, {"y":svgSz[3]+ySvgBottom, "width":pltAr[2], "height": hSvgBtm});
-    addSvgEl(NULL, svgTop, {"x": pltAr[0], "y": ySvgtop, "width":pltAr[2]});
 
     const padding = [svgSz[2]-pltAr[2], svgSz[3]-pltAr[3]];
 
@@ -521,29 +517,31 @@ function plotSvg(elementId, x, y, numLines,
         let bb = getBb(group);
         let x = el.x;
         let y = el.y;
+        let anchor = el.anchor;
+        let boxed = el.boxed;
         
-        if(el.boxed) {
+        if(boxed) {
             x += boxSpacing;
             y += boxSpacing;
-            const stroke = (el.boxed & 1) ? "black" : "none";
-            const fill = (el.boxed & 2) ? "white" : "none";
+            const stroke = (boxed & 1) ? "black" : "none";
+            const fill = (boxed & 2) ? "white" : "none";
             const rect = addSvgRec(NULL, -boxSpacing + bb[0], -boxSpacing + bb[1],
                 bb[2]+2*boxSpacing, bb[3]+2*boxSpacing, fill, stroke, 1);
             group.insertBefore(rect, group.firstChild);
         };
         
         if (el.ref[0] == "in")
-            x = (el.anchor[0] == "right") ? pltAr[0] + pltAr[2] -x - bb[2] : x+pltAr[0];
+            x = (anchor[0] == "right") ? pltAr[0] + pltAr[2] -x - bb[2] : x+pltAr[0];
         else
-            x = (el.anchor[0] == "right") ? svgSz[2] -x - bb[2] : x;
+            x = (anchor[0] == "right") ? svgSz[2] -x - bb[2] : x;
         if (el.ref[1] == "in")
-            y = (el.anchor[1] == "bottom") ? pltAr[1] +pltAr[3] -y - bb[3] : y+pltAr[1];
+            y = (anchor[1] == "bottom") ? pltAr[1] +pltAr[3] -y - bb[3] : y+pltAr[1];
         else           
-            y = (el.anchor[1] == "bottom") ? svgSz[3] -y - bb[3] : y;
+            y = (anchor[1] == "bottom") ? svgSz[3] -y - bb[3] : y;
 
         x -= bb[0]-0.5;
         y -= bb[1]-0.5;
-        setAttr(group, "class", el.anchor[0]+"_" +elementId +" " +el.anchor[1] + "_"+elementId);
+        setAttr(group, "class", anchor[0]+"_" +elementId +" " +anchor[1] + "_"+elementId);
         transform(group, [x,y]);  
        
         bb = getBb(group);
@@ -798,7 +796,6 @@ function plotSvg(elementId, x, y, numLines,
                         closestXproj = ptB.x;
                         closestYproj = ptB.y;
                     } else if(linTip && getAttr(seg, "stroke-width")!= 0) {
-                        console.log(line)
                         closestXproj = xproj;
                         closestYproj = yproj;
                     } else {

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>plot test</title>
+</head>
+<body style="margin: 0px;padding:0px">
+  
+    <div id="drawing" style="width:100%;height:calc(100vh - 4px)"></div>
+
+  <script src="https://messier433.github.io/TinySvgPlot/plotSvgMin.js"></script>
+  <!-- <script src="plotSvgMin.js"></script>-->
+  <script>
+  function createData(numPhases) {
+    const numPts = 256;
+    const y = Array(numPhases*numPts);
+    const x = Array(numPts);
+    const names =  Array(numLines);
+    for(idxPt = 0; idxPt < numPts; ++idxPt) {
+        x[idxPt] = idxPt * 2*Math.PI/numPts;
+        for(idxPh = 0; idxPh < numPhases; ++idxPh) {
+            phase = idxPh*2*Math.PI/numPhases;
+            y[idxPh*numPts + idxPt] = Math.sin(x[idxPt]  + phase);
+            if(idxPt == 0) names[idxPh] = decodeURI("%CF%86") + "0:" + (phase/Math.PI*180) + "°";
+        }
+    }
+
+    return [x, y, names];
+  };
+
+
+
+   numLines =4;
+   [x, y, names] = createData(numLines);
+ 
+   const optParam = {title:"Sine waves", 
+                    subtitle:"with different phases",
+                    xlabel: "Time",
+                    ylabel: "Amplitude",
+                    //xScale: "log",
+                    //yScale: "log",
+                    //style: [":", "--", "-.", "*"],
+                    // marker: ["o","+", "*", ".", "x", "_", "|", "sq", "^", "v", "tr", "tl","fo", "fsq", "f^", "fv", "ftr", "ftl"],
+                    //xlim: [0,6.28],
+                    //ylim: [-1,1],
+                    legend: {
+                        names: names,
+                        x: 5,
+                        y: 0,
+                        anchor: ["right", "top"],
+                        ref: ["out", "in"],
+                        boxed: 1
+                    },
+                    //linTip:false,
+                    buttons: [{text:"log(x)", 
+                               init:"xScale==\"log\"",
+                               redraw:1,
+                               callback:(state)=>{return {"xScale":(state) ? "\"log\"" : "\"lin\""}},
+                               hover:"logarithmic x-axes"
+                              },
+                              {text:"log(y)", 
+                               init:"yScale==\"log\"", 
+                               redraw:1,
+                               callback:(state)=>{return {"yScale":(state) ? "\"log\"" : "\"lin\""}},
+                               hover:"logarithmic y-axes"
+                              },
+                              {text:"snap", 
+                               init:"!linTip", 
+                               redraw:0,
+                               callback:(state)=>{return {"linTip":(state) ? "0" : "1"}},
+                               hover:"Snap with data-tips to points only"
+                              },
+                              {text:"points", 
+                              init:"0", 
+                              redraw:1,
+                              callback:(state)=>{return {"marker":(state) ? "\".\"" : "\"\""}},
+                              hover:"Show data points"
+                              }
+                    ]
+                    };
+
+
+   plotSvg("drawing", x, y, numLines, optParam);
+
+  </script>
+</body>
+</html>

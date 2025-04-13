@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>plot test</title>
+</head>
+<body style="margin: 0px;padding:0px">
+  
+  <div id="drawing" style="width:100%;height:calc(100vh - 4px)"></div>
+
+  <script src="https://messier433.github.io/TinySvgPlot/plotSvgMin.js"></script>
+  <!-- <script src="plotSvgMin.js"></script>-->
+  <script>
+  function linspace(start, increment, stop) {
+      numel = Math.floor((stop-start)/increment)+1;
+      out = Array(numel);
+
+      for(idx=0; idx < numel; ++idx){
+          out[idx] = start + increment*idx;
+      };
+      return out;
+  };
+
+  function linearFit(x,y) {
+    let sumx = 0;
+    let sumy = 0;
+    let sumxy = 0;
+    let sumx2 = 0;
+    for(let idx =0; idx < x.length;++idx) {
+        sumx += x[idx];
+        sumy += y[idx];
+        sumxy += x[idx]*y[idx];
+        sumx2 += x[idx]*x[idx];
+    };
+     const k = (sumxy- sumx*sumy/x.length) / (sumx2 - sumx*sumx/x.length);
+     const d = (sumy-k*sumx) / x.length;
+
+     return [k,d];
+  };
+
+   x = linspace(0,1, 50);
+   sigma = 1;
+   k = 0.1;
+   d = 10;
+   y = x.map((val) => k*val + d + sigma*Math.sqrt(12)*(Math.random()-0.5));
+   
+   [k_est, d_est] = linearFit(x,y);
+   y_est = x.map((val) => k_est*val + d_est);
+
+   y = y.concat(y_est);
+
+  const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
+  const txt = document.createElementNS("http://www.w3.org/2000/svg", "text");
+  txt.setAttribute("fill", "black");
+  txt.setAttribute("stroke-width", "1");
+  txt.setAttribute("font-size", 12);
+  txt.setAttribute("font-family", "Courier");
+  group.append(txt);
+  const line0 = document.createElementNS("http://www.w3.org/2000/svg", "tspan");
+  line0.append(document.createTextNode("Estimated:"));
+  const line1 = document.createElementNS("http://www.w3.org/2000/svg", "tspan");
+  line1.append(document.createTextNode("k: " + k_est));
+  line1.setAttribute("x", 0);
+  line1.setAttribute("dy", 14);
+  const line2 = document.createElementNS("http://www.w3.org/2000/svg", "tspan");
+  line2.append(document.createTextNode("d: " + d_est));
+  line2.setAttribute("x", 0);
+  line2.setAttribute("dy", 14);
+  txt.append(line0);     
+  txt.append(line1);
+  txt.append(line2);  
+        
+  const optParam = {title:"Random data", 
+                    subtitle:"with linear fit",
+                    xlabel: "Sample index",
+                    ylabel: "Value",
+                    style: ["*", "-."],
+                    marker:  ["x"],
+                    legend: {
+                        names: ["Raw data", "Linear fit"],
+                        x: 4,
+                        y: 4,
+                        anchor: ["left", "top"],
+                        ref: ["in", "in"],
+                        boxed: 3,                        
+                    },
+                    add: [
+                        {
+                            group: group,
+                            x: 4,
+                            y: 4,
+                            anchor: ["right", "bottom"],
+                            ref: ["in", "in"],
+                            boxed: 3
+                        }
+                    ],
+                    linTip: true,
+                    };
+
+
+   plotSvg("drawing", x, y, 2, optParam);
+
+  </script>
+</body>
+</html>

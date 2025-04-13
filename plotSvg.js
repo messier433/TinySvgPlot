@@ -472,20 +472,6 @@ function plotSvg(elementId, x, y, numLines,
             } else
                 ySvgBottom -= legBB[3];
         };
-
-        /*
-        const hLegendItems = hSvgLeg;
-        wSvgLeg = (wSvgLeg > maxLegendWidth) ? maxLegendWidth : wSvgLeg;
-        hSvgLeg = (hSvgLeg > maxLegendHeight) ? maxLegendHeight : hSvgLeg;
-            
-        const xleg = (legWest) ? pltAr[0]+legendXSpacing : svgSz[2]-wSvgLeg-legendXSpacing - wLegendMargin;
-        const yleg = hSvgTop + hLegendMargin/2;
-        const legInside = legend.ref == "plot";
-        const legWest = legend.anchor[0] == "left";
-        const wSvgDraw = svgSz[2] - wSvgLeg*(1-legInside) - wSvgLeft - 2*legendXSpacing;
-        // add legend again at the end to be in front of drawing
-        //if(legInside) addSvgEl(svg,gleg); 
-        */
     };
 
     add.forEach(el => addToAnchor (el.group, el));
@@ -811,7 +797,8 @@ function plotSvg(elementId, x, y, numLines,
                     } else if((dCBx < dx) && (dCBy < dy) ) {
                         closestXproj = ptB.x;
                         closestYproj = ptB.y;
-                    } else if(linTip && getAttr(line, "stroke-width")!= 0) {
+                    } else if(linTip && getAttr(seg, "stroke-width")!= 0) {
+                        console.log(line)
                         closestXproj = xproj;
                         closestYproj = yproj;
                     } else {

@@ -1,7 +1,7 @@
 GitHub:  <a href="https://github.com/messier433/TinySvgPlot">https://github.com/messier433/TinySvgPlot</a>
 <p float="left">
   <a href="https://messier433.github.io/TinySvgPlot/sine.html" target="_blank"><img src="https://github.com/user-attachments/assets/df3835ec-7a04-4c27-b22c-3b23729f6088" width="45%"/></a>
-  <a href="https://messier433.github.io/TinySvgPlot/rand.html" target="_blank"><img src="https://github.com/user-attachments/assets/1b7215d3-5e15-458e-bfb8-9cd79231248a" width="45%"/></a>
+  <a href="https://messier433.github.io/TinySvgPlot/rand.html" target="_blank"><img src="https://github.com/user-attachments/assets/a613ac17-398e-4046-b810-ffadd634682d" width="45%"/></a>
 </p>
 
 Supported plot features

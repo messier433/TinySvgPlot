@@ -39,10 +39,11 @@ const isArray = array.isArray;
 const Inf = Infinity;
 const doc =document;
 const NULL = null;
+const NONE = "none";
 
 function plotSvg(elementId, x, y, numLines, 
 {color = "", title = "", subtitle = "", xlabel = "", ylabel="", xlim=[], ylim=[], style="-", marker="", 
-    legend= {names:[], x:0, y:0, anchor:["right", "top"], ref:["out", "in"], boxed:1, fill:"none"}, 
+    legend= {names:[], x:0, y:0, anchor:["right", "top"], ref:["out", "in"], boxed:1, fill:NONE}, 
     xScale = "lin", yScale = "lin", grid = true, gridMinor = [], xtick = [], ytick = [], 
     xticklbl=[], yticklbl=[], xtickangle = 0, ytickangle = 0, linTip = true,
     buttons = [], add = []
@@ -63,7 +64,7 @@ function plotSvg(elementId, x, y, numLines,
         //return the element with the set attributes:
         return element;
     };
-    const addSvgRec = (parent, x, y, width, height, fill="none", stroke="none", stroke_width=2, rx=0) =>
+    const addSvgRec = (parent, x, y, width, height, fill=NONE, stroke=NONE, stroke_width=2, rx=0) =>
         addSvgEl(parent, "rect", {"x":x, "y":y,"width":width, "height":height, "rx":rx,
                 "stroke":stroke, "stroke-width": stroke_width, "fill": fill, "vector-effect":"non-scaling-stroke"
         });  
@@ -82,7 +83,7 @@ function plotSvg(elementId, x, y, numLines,
         });  
 
     const addSvgPolyLn = (parent, points="", stroke="#000", strokedasharray="", stroke_width=2) => 
-        addSvgEl(parent, "polyline", {"points":points, "fill": "none",
+        addSvgEl(parent, "polyline", {"points":points, "fill": NONE,
                 "stroke":stroke, "stroke-width": stroke_width, "stroke-dasharray": strokedasharray, "vector-effect":"non-scaling-stroke"
         });  
     const getEl = id => doc.getElementById(id);
@@ -97,8 +98,9 @@ function plotSvg(elementId, x, y, numLines,
     const transform = (element, translate, scale) => {
         let str = (translate!=NULL) ? "translate("+translate[0]+" "+translate[1]+")" : "";
         str += (scale!=NULL) ? "scale("+scale[0]+" "+scale[1]+")" : "";
-        element.setAttribute("transform", str);
+        setAttr(element, "transform", str);
     };
+    const getClassMember = classStr => doc.getElementsByClassName(classStr + "_" + elementId);
 
     
     /////////////////////////////////////
@@ -126,8 +128,10 @@ function plotSvg(elementId, x, y, numLines,
     // create legend
     //////////////////////////////////////
     // create group
-    const legAnchor = legend.anchor;
-    const legRef = legend.ref;
+    const gridMinInt = gridMinor;
+    const legInt = legend;
+    const legAnchor = legInt.anchor;
+    const legRef = legInt.ref;
     const gleg = addSvgEl(NULL, "g", {"pointer-events":"visible", 
         "class" : legAnchor[0]+"_" +elementId +" " +legAnchor[1] + "_"+elementId});
     gleg.onclick = (event) => legClicked(event, 0);
@@ -136,15 +140,15 @@ function plotSvg(elementId, x, y, numLines,
     let svgLeg = NULL; // define already here
     let defsLeg  = NULL;
 
-    if(length(legend.names)>0 && numLines > 0 && length(x) > 0) {  
+    if(length(legInt.names)>0 && numLines > 0 && length(x) > 0) {  
         // draw legend box (change width later)
         svgLeg = addSvgEl(gleg, "svg", {"id":"sl_"+elementId});
         defsLeg = addSvgEl(svgLeg, "defs");
   
         let nLegend = numLines; 
-        let legendTmp = legend.names;
-        if(length(legend) > numLines) { // cannot be more legend entries than lines
-            legendTmp = legend.slice(0,nLegend);  
+        let legendTmp = legInt.names;
+        if(length(legendTmp) > numLines) { // cannot be more legend entries than lines
+            legendTmp = legendTmp.slice(0,nLegend);  
         }             
         
         // create legend items
@@ -214,10 +218,10 @@ function plotSvg(elementId, x, y, numLines,
     // plotting area
     //////////////////////////////   
     // background SVG used for ticks and grid
-    const svgBg = addSvgEl(svg, "svg", {"id":"s_bg_"+elementId, "preserveAspectRatio":"none",
+    const svgBg = addSvgEl(svg, "svg", {"id":"s_bg_"+elementId, "preserveAspectRatio":NONE,
             "viewBox":"0 0 100 100"});
 
-    const svgDraw = addSvgEl(svg, "svg", {"id":"sd_"+elementId, "preserveAspectRatio":"none",
+    const svgDraw = addSvgEl(svg, "svg", {"id":"sd_"+elementId, "preserveAspectRatio":NONE,
         "viewBox":"0 0 100 100"});
     
     svgDraw.style.cursor = "crosshair";
@@ -317,17 +321,17 @@ function plotSvg(elementId, x, y, numLines,
         // Draw grid and labels
         ////////////////////////////
 
-        if(length(gridMinor) < 1) {
+        if(length(gridMinInt) < 1) {
             // enable minor grid by default for log axes
             gridMinorSet[0] = xScale == 'log';
             gridMinorSet[1] = yScale == 'log';
         } else {
-            if(length(gridMinor) > 1) {
-                gridMinorSet[0] = gridMinor[0];
-                gridMinorSet[1] = gridMinor[1];
+            if(length(gridMinInt) > 1) {
+                gridMinorSet[0] = gridMinInt[0];
+                gridMinorSet[1] = gridMinInt[1];
             } else {
-                gridMinorSet[0] = gridMinor;
-                gridMinorSet[1] = gridMinor;
+                gridMinorSet[0] = gridMinInt;
+                gridMinorSet[1] = gridMinInt;
             };
         };     
 
@@ -387,7 +391,7 @@ function plotSvg(elementId, x, y, numLines,
             };
             const hideLn = svgLeg != NULL && svgLeg.childNodes[lnIdx+1].style.opacity == 0.3;         
             const polyGrp = addSvgEl(gp, "g", {"id": "pl_" +elementId+"_"+lnIdx});
-            polyGrp.style.display = (hideLn) ? "none" : "block";
+            polyGrp.style.display = (hideLn) ? NONE : "block";
             let poly = NULL;
             //poly.setAttribute("shape-rendering","optimizeSpeed ");
             if(svgLeg!=NULL) {
@@ -418,7 +422,7 @@ function plotSvg(elementId, x, y, numLines,
                 
             };                
         };
-        plRec = addSvgRec(svgDraw, 0, 0, "100%", "100%", "none", "#000");
+        plRec = addSvgRec(svgDraw, 0, 0, "100%", "100%", NONE, "#000");
         addSvgEl(NULL, plRec, {"id":"plr_"+elementId,"pointer-events": "visible"});
         plRec.onclick = (event) => plotClicked(event);
     };
@@ -436,11 +440,11 @@ function plotSvg(elementId, x, y, numLines,
     const wSvgDraw = svgSz[2] - wSvgLeft - 2*axesLblFontSize;
     const pltAr = [wSvgLeft, hSvgTop, wSvgDraw, hSvgDraw];
     const gBottomShift = -svgSz[3] + pltAr[1] + pltAr[3];    
-    //const wLegendMargin = 1 + 2*legend.boxed*boxSpacing + 2*legend.x; //legInside ? 2*boxSpacing : 0;
-    const hLegendMargin = 1 + 2*legend.boxed*boxSpacing + 2*legend.y; //legInside ? 2*boxSpacing : 0;
+    //const wLegendMargin = 1 + 2*legInt.boxed*boxSpacing + 2*legInt.x; //legInside ? 2*boxSpacing : 0;
+    const hLegendMargin = 1 + 2*legInt.boxed*boxSpacing + 2*legInt.y; //legInside ? 2*boxSpacing : 0;
 
     if (svgLeg != NULL) {
-        legBB = addToAnchor(gleg, legend);
+        legBB = addToAnchor(gleg, legInt);
 
         const maxLegendHeight = hSvgDraw - hLegendMargin;
         const truncH =  (legBB[3] > maxLegendHeight);
@@ -450,7 +454,7 @@ function plotSvg(elementId, x, y, numLines,
         addSvgEl(NULL, svgLeg, {"width":wSvgLeg, "height": hSvgLeg,
             "viewBox": "0 0 " + wSvgLeg + " " + hSvgLeg});
         recleg = gleg.childNodes[0];
-        recleg.height.baseVal.value = hSvgLeg + 2*(legend.boxed&&truncH)*boxSpacing;
+        recleg.height.baseVal.value = hSvgLeg + 2*(legInt.boxed&&truncH)*boxSpacing;
         if (legRef[0] == "out") {
             if(legAnchor[0] == "left") {
                 pltAr[0] += legBB[0]+legBB[2]+boxSpacing;
@@ -500,14 +504,14 @@ function plotSvg(elementId, x, y, numLines,
     buttons.forEach(button => addToggleButton(button));
 
     // add event callbacks
-    svg.oncontextmenu = (event) => {event.preventDefault()}; // prevent context menu during zoom
-    svgDraw.onmousedown = (event) => plotMouseDown(event);
+    svg.oncontextmenu = event => event.preventDefault(); // prevent context menu during zoom
+    svgDraw.onmousedown = event => plotMouseDown(event);
     svgDraw.ondblclick = () => setAxesLim(pltLim);
-    svg.onmousedown = (event) => {event.preventDefault()}; // prevent context menu during zoom
+    svg.onmousedown = event => event.preventDefault(); // prevent context menu during zoom
     svg.onmouseup = () => plotZoom();
    
-    if(length(legend.names) > 0)
-        gleg.onwheel = (event) => scrollLegend(event)
+    if(length(legInt.names) > 0)
+        gleg.onwheel = event => scrollLegend(event)
    
     new ResizeObserver(() => resizeSvg()).observe(svg);
     resizeSvg(); // execute once for proper scaling of several elements
@@ -520,10 +524,10 @@ function plotSvg(elementId, x, y, numLines,
         let y = el.y;
         let anchor = el.anchor;
      
-        if(el.boxed||e.fill!="none") {
+        if(el.boxed||e.fill!=NONE) {
             x += boxSpacing;
             y += boxSpacing;
-            const stroke = el.boxed ? "#000" : "none";
+            const stroke = el.boxed ? "#000" : NONE;
             const rect = addSvgRec(NULL, -boxSpacing + bb[0], -boxSpacing + bb[1],
                 bb[2]+2*boxSpacing, bb[3]+2*boxSpacing, el.fill, stroke, 1);
             group.insertBefore(rect, group.firstChild);
@@ -572,8 +576,8 @@ function plotSvg(elementId, x, y, numLines,
     function addToggleButton(button) {
         const tglBtn = addSvgEl(btnGrp, "g", {"pointer-events": "visible"});
         const hover = addSvgEl(tglBtn, "title");        
-        const rec = addSvgRec(tglBtn, 0, -14, 0, 18, "none");  // invisible rectangle for click event
-        //addSvgRec(logBtn, 0, -14, 36, 18, "none", "#73AFD7", 2.5, 3);  // invisible rectangle for click event
+        const rec = addSvgRec(tglBtn, 0, -14, 0, 18, NONE);  // invisible rectangle for click event
+        //addSvgRec(logBtn, 0, -14, 36, 18, NONE, "#73AFD7", 2.5, 3);  // invisible rectangle for click event
         const lbl = addSvgTxt(tglBtn, button.text, 3,-1,12, "start", defaultFont, "grey");
         const bbw = getBb(lbl)[2] + 6;
         let isClicked = eval(button.init);
@@ -608,7 +612,7 @@ function plotSvg(elementId, x, y, numLines,
         //"o","+", "*", ".", "x", "_", "|", "sq"
         const marker = addSvgEl(defsDraw, "marker", {"id":"m"+id+"_"+elementId,
             "markerWidth":"10", "markerHeight":"10", "refX":"5", "refY":"5",
-            "markerUnits":"userSpaceOnUse", "fill":"none","stroke":"context-stroke"});
+            "markerUnits":"userSpaceOnUse", "fill":NONE,"stroke":"context-stroke"});
         const markerGrp = addSvgEl(marker, "g", {
             "stroke-width":1.5,"vector-effect":"non-scaling-stroke",
             "class":"marker_" + elementId});
@@ -625,7 +629,7 @@ function plotSvg(elementId, x, y, numLines,
     };
 
     function downloadSvg() {
-        btnGrp.style.display = "none"; // hide button for screenshot
+        btnGrp.style.display = NONE; // hide button for screenshot
         svgDraw.style.cursor = "auto"; // change cursor style over plot area to avoid confusion that this is a screenshot
         const svgSz = size(svg); // get current size of svg
         const outerStr = "\<svg width=\"" + svgSz[2] + "\" height=\""+svgSz[3]+"\" xmlns=\""+ns+"\"\>";
@@ -645,7 +649,7 @@ function plotSvg(elementId, x, y, numLines,
     function setVisibility(elementId, lnIdx, visible = 0) {
         const datatips = getEl("gpl_" +elementId+"_"+lnIdx); // datatip group
 
-        const str =(visible) ? "block" : "none";        
+        const str =(visible) ? "block" : NONE;        
         getEl("pl_"+elementId+"_"+lnIdx).style.display = str;              
         getEl("lgi_"+elementId+"_"+lnIdx).style.opacity = 0.3+0.7*visible;
         if(datatips!=NULL) datatips.style.display = str;
@@ -661,7 +665,7 @@ function plotSvg(elementId, x, y, numLines,
         if(clkLn == NULL)
             return;
 
-        const visible = clkLn.style.display != "none";   
+        const visible = clkLn.style.display != NONE;   
     
         // else
         const startIdx = (numLines == 0) ? lnIdx : 0;
@@ -680,8 +684,8 @@ function plotSvg(elementId, x, y, numLines,
         const childSz = size(svgDraw); // current size of current plot area
         const newChildWidth = parentSz[2]-padding[0];
         const newChildHeight = parentSz[3]-padding[1];
-        const rightAnchorEl = doc.getElementsByClassName("right_" + elementId);
-        const bottomAnchorEl = doc.getElementsByClassName("bottom_" + elementId);
+        const rightAnchorEl = getClassMember("right");
+        const bottomAnchorEl =getClassMember("bottom");
 
         if(childSz[2] != newChildWidth) {
             setAttr(svgDraw, "width", newChildWidth); 
@@ -704,7 +708,7 @@ function plotSvg(elementId, x, y, numLines,
                 newLegHeight = trunc ? newLegHeight : legBB[3];
                 setAttr(svgLeg, "height", newLegHeight);
                 svgLeg.viewBox.baseVal.height = newLegHeight;
-                recleg.height.baseVal.value = newLegHeight+ 2*(legend.boxed&&trunc)*boxSpacing;
+                recleg.height.baseVal.value = newLegHeight+ 2*(legInt.boxed&&trunc)*boxSpacing;
             }
         }
         // update datatip location which refers to top SVG and not scaled with drawing SVG
@@ -757,7 +761,7 @@ function plotSvg(elementId, x, y, numLines,
                 const seg = line.children[segidx];
                 const pts = seg.points;
                 const nPts = length(pts);
-                if( line.style.display == "none") // dont consider hidden lines
+                if( line.style.display == NONE) // dont consider hidden lines
                     continue;
                 for(let idxPt = 1; idxPt < nPts;++idxPt) {
                     const ptA = pts[idxPt-1];
@@ -896,11 +900,11 @@ function plotSvg(elementId, x, y, numLines,
 
         addSvgRec(datatip, -2, -2, 4, 4, "#000");
         // add invisble circle to  capture clicks
-        addSvgEl(datatip, "circle", {"r":dSnap, "fill":"none", "pointer-events": "visible"});
+        addSvgEl(datatip, "circle", {"r":dSnap, "fill":NONE, "pointer-events": "visible"});
     };
 
     function updateMarkerPos() {
-        const datatips = doc.getElementsByClassName("marker_" + elementId);
+        const datatips = getClassMember("marker");
         // update datatip location which refers to top SVG and not scaled with drawing SVG
         for(let idx = 0; idx<length(datatips); ++idx) {
             const svgSz = size(svgDraw);
@@ -963,7 +967,7 @@ function plotSvg(elementId, x, y, numLines,
         const tickangle = [xtickangle, ytickangle];
         const bb = [0,0];
         // remove old grid before creating a new one
-        const gridEl = doc.getElementsByClassName("cg_"+elementId);
+        const gridEl = getClassMember("cg");
    
         while (length(gridEl) > 0) gridEl[0].remove(); 
 
